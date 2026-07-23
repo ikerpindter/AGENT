@@ -1,0 +1,32 @@
+# Archivos generados por Python
+__pycache__/
+*.py[oc]
+*.pyc
+build/
+dist/
+wheels/
+*.egg-info
+
+# Entornos virtuales
+.venv
+venv/
+
+# Variables de entorno y secretos
+.env
+.env.*
+!.env.example
+secrets/
+*.key
+*.pem
+
+# Caches de herramientas
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.cache/
+
+# Datos locales: nada de esto va al repo publico
+data/
+cache/
+*.sqlite
+*.db

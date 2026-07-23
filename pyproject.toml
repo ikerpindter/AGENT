@@ -1,0 +1,21 @@
+[project]
+name = "agente-portfolio"
+version = "0.1.0"
+description = "Agente multi-step con tool use, retries y recovery"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "openai>=2.48.0",
+    "python-dotenv>=1.2.2",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# El proyecto no se instala como paquete; esto pone src/ en sys.path para que
+# los tests importen agent.* sin depender del cwd.
+pythonpath = ["src"]
