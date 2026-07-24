@@ -28,5 +28,6 @@ secrets/
 # Datos locales: nada de esto va al repo publico
 data/
 cache/
+traces/
 *.sqlite
 *.db
