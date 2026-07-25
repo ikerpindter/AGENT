@@ -125,6 +125,34 @@ def test_para_en_max_steps_si_el_modelo_nunca_termina(tmp_path):
     assert len(client.requests) == MAX_STEPS  # ni una llamada mas del tope
 
 
+def test_encadena_dos_tools_distintas(tmp_path):
+    client = FakeClient(
+        [
+            _tool_call_response(
+                "search_financials",
+                {"company": "Lennar", "year": 2024, "metric": "total_revenues"},
+                call_id="call_a",
+            ),
+            _tool_call_response(
+                "calculator",
+                {"operation": "divide", "a": 35441.5, "b": 2},
+                call_id="call_b",
+            ),
+            _answer_response("La mitad es 17720.75"),
+        ]
+    )
+
+    trace = run_agent("pregunta financiera", client=client, trace_dir=tmp_path)
+
+    # Paso 1: eligio la busqueda y esta dio la cifra real de la tabla.
+    assert trace["steps"][0]["tool_calls"][0]["name"] == "search_financials"
+    assert trace["steps"][0]["tool_calls"][0]["result"].startswith("35441.5")
+    # Paso 2: eligio la calculadora y esta calculo bien.
+    assert trace["steps"][1]["tool_calls"][0]["name"] == "calculator"
+    assert trace["steps"][1]["tool_calls"][0]["result"] == "17720.75"
+    assert trace["stopped_reason"] == "answer"
+
+
 def test_guarda_el_trace_como_json(tmp_path):
     client = FakeClient([_answer_response("hola")])
 

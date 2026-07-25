@@ -15,7 +15,7 @@ from openai import OpenAI
 from agent.tools import TOOL_FUNCTIONS, TOOL_SCHEMAS
 
 MODEL = "gpt-5.4-nano"
-MAX_STEPS = 5
+MAX_STEPS = 10
 MAX_OUTPUT_TOKENS = 1000  # guarda de costo por llamada
 
 # Precios de gpt-5.4-nano en USD por millon de tokens (doc oficial, 2026-07).
