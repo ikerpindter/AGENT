@@ -22,6 +22,15 @@ def main() -> None:
             "Tambien se puede via la variable de entorno AGENT_FAULT."
         ),
     )
+    parser.add_argument(
+        "--backend",
+        choices=["table", "rag"],
+        default="table",
+        help=(
+            "Fondo de search_financials: 'table' (12 numeros verificados, "
+            "default) o 'rag' (retrieval del Proyecto 1, con reranker)."
+        ),
+    )
     args = parser.parse_args()
 
     spec = args.fault or os.environ.get("AGENT_FAULT")
@@ -30,8 +39,17 @@ def main() -> None:
         injector = FaultInjector(parse_fault(spec))
         print(f"[fault injection ACTIVA] {injector.config}")
 
+    tool_functions = None
+    if args.backend == "rag":
+        from agent.rag_tool import make_rag_search
+        from agent.tools import TOOL_FUNCTIONS
+
+        tool_functions = dict(TOOL_FUNCTIONS)
+        tool_functions["search_financials"] = make_rag_search(no_rerank=False)
+        print("[backend: rag] search_financials respaldada por el RAG (reranker on)")
+
     load_dotenv()  # carga OPENAI_API_KEY del .env
-    run_agent(args.question, injector=injector)
+    run_agent(args.question, injector=injector, tool_functions=tool_functions)
 
 
 if __name__ == "__main__":

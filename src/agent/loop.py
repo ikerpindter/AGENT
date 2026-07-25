@@ -33,15 +33,23 @@ def run_agent(
     trace_dir: str | Path = "traces",
     injector=None,
     retry_sleep=None,
+    tool_functions=None,
+    tool_schemas=None,
 ) -> dict:
     """Corre el loop completo para una pregunta y regresa el trace.
 
     `client` es inyectable para que los tests usen un cliente falso sin red.
     `injector` (FaultInjector) inyecta fallas a proposito; None = apagado.
     `retry_sleep` reemplaza la espera del backoff en tests.
+    `tool_functions`/`tool_schemas` permiten cambiar el backend de una tool
+    (p.ej. search_financials respaldada por el RAG); None = las de tabla.
     """
     if client is None:
         client = OpenAI()
+    if tool_functions is None:
+        tool_functions = TOOL_FUNCTIONS
+    if tool_schemas is None:
+        tool_schemas = TOOL_SCHEMAS
 
     input_items = [{"role": "user", "content": question}]
     trace = {
@@ -67,7 +75,7 @@ def run_agent(
             return client.responses.create(
                 model=MODEL,
                 input=input_items,
-                tools=TOOL_SCHEMAS,
+                tools=tool_schemas,
                 max_output_tokens=MAX_OUTPUT_TOKENS,
             )
 
@@ -126,11 +134,11 @@ def run_agent(
             arguments = {}
             try:
                 arguments = json.loads(call.arguments)
-                tool_fn = TOOL_FUNCTIONS.get(name)
+                tool_fn = tool_functions.get(name)
                 if tool_fn is None:
                     result = (
                         f"Error: tool desconocida {name!r}. "
-                        f"Tools disponibles: {sorted(TOOL_FUNCTIONS)}"
+                        f"Tools disponibles: {sorted(tool_functions)}"
                     )
                 else:
                     if injector is not None:
