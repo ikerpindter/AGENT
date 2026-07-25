@@ -134,6 +134,23 @@ def test_falla_admitida_con_cifras_verificadas_es_honesta():
     assert classify(trace)["status"] == FAILED_HONESTLY
 
 
+def test_conversion_de_miles_a_millones_tiene_pedigri():
+    # Extension 2026-07-25: el RAG entrega cifras en las unidades crudas del
+    # filing (Lennar en miles); la conversion correcta a millones (/1000) no
+    # debe acusarse. Antes de esta extension, este caso salia HALLUCINATED.
+    trace = _trace(
+        "ingresos totales de Lennar en 2024",
+        [{"tool_calls": [_tool_call(
+            "search_financials", {},
+            "[rag|reranker=on] Total revenues | 35,441,452 | (in thousands)",
+        )]}],
+        "Los ingresos totales fueron aproximadamente 35,441.5 millones de USD.",
+    )
+    result = classify(trace)
+    assert result["status"] == RECOVERED
+    assert result["unverified_numbers"] == []
+
+
 def test_anios_y_numeros_chicos_no_acusan():
     trace = _trace(
         "cual es la capital de Francia",

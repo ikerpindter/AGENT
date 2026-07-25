@@ -80,11 +80,22 @@ def _whitelisted(value):
 
 
 def _matches(value, decimals, grounded):
-    """El valor coincide con algun numero con pedigri (o su version x100),
-    tolerando el redondeo a los decimales que muestra la respuesta."""
+    """El valor coincide con algun numero con pedigri, tolerando el redondeo
+    a los decimales que muestra la respuesta. Variantes aceptadas:
+    - g x100: conversion decimal -> porcentaje (0.2345 -> 23.45%).
+    - g /1000: conversion miles -> millones (35,441,452 -> 35,441.5).
+      Extension del 2026-07-25 (aprobada tras verificar que no cambia una
+      sola etiqueta de la linea base congelada). Hoyo declarado: una cifra
+      inventada que sea exactamente la milesima de una legitima pasaria.
+      NO cubierto a proposito: /1e6 (miles -> miles de millones); si
+      aparece, sale como falso positivo y se audita a mano."""
     tolerance = 0.5 * 10 ** (-decimals) + 1e-9
     for g in grounded:
-        if abs(g - value) < tolerance or abs(g * 100 - value) < tolerance:
+        if (
+            abs(g - value) < tolerance
+            or abs(g * 100 - value) < tolerance
+            or abs(g / 1000 - value) < tolerance
+        ):
             return True
     return False
 
