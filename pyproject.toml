@@ -10,8 +10,9 @@ dependencies = [
 ]
 
 [project.scripts]
-# Entry point: escribir `agent` en la terminal ejecuta agent.cli:main.
+# Entry points: escribir `agent` en la terminal ejecuta agent.cli:main.
 agent = "agent.cli:main"
+agent-eval = "agent.harness:main"
 
 [dependency-groups]
 dev = [
