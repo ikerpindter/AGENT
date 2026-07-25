@@ -153,6 +153,68 @@ def test_encadena_dos_tools_distintas(tmp_path):
     assert trace["stopped_reason"] == "answer"
 
 
+def test_tool_que_truena_se_vuelve_error_legible_y_el_modelo_recupera(tmp_path):
+    from agent.faults import FaultInjector, parse_fault
+
+    injector = FaultInjector(
+        parse_fault("tool_exception,tool=search_financials,mode=once")
+    )
+    client = FakeClient(
+        [
+            _tool_call_response(
+                "search_financials",
+                {"company": "Lennar", "year": 2024, "metric": "total_revenues"},
+                call_id="call_1",
+            ),
+            _tool_call_response(
+                "search_financials",
+                {"company": "Lennar", "year": 2024, "metric": "total_revenues"},
+                call_id="call_2",
+            ),
+            _answer_response("Los ingresos totales fueron 35,441.5 millones."),
+        ]
+    )
+
+    trace = run_agent(
+        "ingresos de Lennar 2024", client=client, trace_dir=tmp_path,
+        injector=injector,
+    )
+
+    # Paso 1: la falla se convirtio en error legible, sin crash del loop.
+    assert trace["steps"][0]["tool_calls"][0]["result"].startswith("Error:")
+    # Y el error viajo al modelo como function_call_output normal.
+    second_input = client.requests[1]["input"]
+    outputs = [i for i in second_input
+               if isinstance(i, dict) and i.get("type") == "function_call_output"]
+    assert outputs[0]["output"].startswith("Error:")
+    # Paso 2: el reintento del MODELO (no backoff) funciono.
+    assert trace["steps"][1]["tool_calls"][0]["result"].startswith("35441.5")
+    assert trace["faults_injected"] == [
+        {"kind": "tool_exception", "step": 1, "tool": "search_financials"}
+    ]
+    assert trace["retries"] == []  # cero reintentos de API: esto fue recovery
+    assert trace["final_status"] == "RECOVERED"
+
+
+def test_api_timeout_se_reintenta_con_backoff(tmp_path):
+    from agent.faults import FaultInjector, parse_fault
+
+    injector = FaultInjector(parse_fault("api_timeout,mode=once"))
+    client = FakeClient([_answer_response("Paris")])
+    waits = []
+
+    trace = run_agent(
+        "capital de Francia", client=client, trace_dir=tmp_path,
+        injector=injector, retry_sleep=waits.append,
+    )
+
+    assert trace["final_answer"] == "Paris"
+    assert len(trace["retries"]) == 1
+    assert trace["retries"][0]["error_type"] == "APITimeoutError"
+    assert waits == [1]  # espero 1s (falso) antes del reintento que funciono
+    assert trace["final_status"] == "RECOVERED"
+
+
 def test_guarda_el_trace_como_json(tmp_path):
     client = FakeClient([_answer_response("hola")])
 

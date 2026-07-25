@@ -7,12 +7,16 @@ tope duro para que nunca se quede girando.
 """
 
 import json
+import time
 from datetime import datetime
 from pathlib import Path
 
+import openai
 from openai import OpenAI
 
+from agent.retry import call_with_retries
 from agent.tools import TOOL_FUNCTIONS, TOOL_SCHEMAS
+from agent.verify import classify
 
 MODEL = "gpt-5.4-nano"
 MAX_STEPS = 10
@@ -23,10 +27,18 @@ PRICE_INPUT_PER_M = 0.20
 PRICE_OUTPUT_PER_M = 1.25
 
 
-def run_agent(question: str, client=None, trace_dir: str | Path = "traces") -> dict:
+def run_agent(
+    question: str,
+    client=None,
+    trace_dir: str | Path = "traces",
+    injector=None,
+    retry_sleep=None,
+) -> dict:
     """Corre el loop completo para una pregunta y regresa el trace.
 
     `client` es inyectable para que los tests usen un cliente falso sin red.
+    `injector` (FaultInjector) inyecta fallas a proposito; None = apagado.
+    `retry_sleep` reemplaza la espera del backoff en tests.
     """
     if client is None:
         client = OpenAI()
@@ -38,18 +50,50 @@ def run_agent(question: str, client=None, trace_dir: str | Path = "traces") -> d
         "steps": [],
         "final_answer": None,
         "stopped_reason": None,
+        "faults_injected": [],
+        "retries": [],
+        "final_status": None,
+        "unverified_numbers": [],
         "total_input_tokens": 0,
         "total_output_tokens": 0,
         "cost_usd": 0.0,
     }
 
     for step in range(1, MAX_STEPS + 1):
-        response = client.responses.create(
-            model=MODEL,
-            input=input_items,
-            tools=TOOL_SCHEMAS,
-            max_output_tokens=MAX_OUTPUT_TOKENS,
-        )
+
+        def _api_call():
+            if injector is not None:
+                injector.before_api_call(step)
+            return client.responses.create(
+                model=MODEL,
+                input=input_items,
+                tools=TOOL_SCHEMAS,
+                max_output_tokens=MAX_OUTPUT_TOKENS,
+            )
+
+        def _on_retry(attempt, exc, wait):
+            trace["retries"].append(
+                {
+                    "step": step,
+                    "attempt": attempt,
+                    "error_type": type(exc).__name__,
+                    "wait_seconds": wait,
+                }
+            )
+            print(
+                f"  RETRY: intento {attempt} fallo con {type(exc).__name__}; "
+                f"esperando {wait}s antes de reintentar"
+            )
+
+        try:
+            response = call_with_retries(
+                _api_call, on_retry=_on_retry, sleep=retry_sleep or time.sleep
+            )
+        except openai.APIError as exc:
+            # Se agotaron los reintentos (o el error no era reintentable).
+            trace["stopped_reason"] = "api_error"
+            print(f"\nALTO: la API fallo sin remedio: {type(exc).__name__}: {exc}")
+            break
         step_record = {
             "step": step,
             "tool_calls": [],
@@ -76,12 +120,29 @@ def run_agent(question: str, client=None, trace_dir: str | Path = "traces") -> d
         # ejecuta cada tool y el resultado se anexa con su call_id.
         input_items += response.output
         for call in function_calls:
-            arguments = json.loads(call.arguments)
-            tool_fn = TOOL_FUNCTIONS.get(call.name)
-            if tool_fn is None:
-                result = f"Error: tool desconocida {call.name!r}"
-            else:
-                result = tool_fn(**arguments)
+            name = call.name
+            if injector is not None:
+                name = injector.rewrite_tool_name(step, name)
+            arguments = {}
+            try:
+                arguments = json.loads(call.arguments)
+                tool_fn = TOOL_FUNCTIONS.get(name)
+                if tool_fn is None:
+                    result = (
+                        f"Error: tool desconocida {name!r}. "
+                        f"Tools disponibles: {sorted(TOOL_FUNCTIONS)}"
+                    )
+                else:
+                    if injector is not None:
+                        injector.before_tool_run(step, name)
+                    result = tool_fn(**arguments)
+            except Exception as exc:
+                # Recovery, no retry: una tool que truena es un error
+                # determinista. Se convierte en texto legible y el MODELO
+                # decide como seguir; aqui no se arregla nada por atras.
+                result = f"Error: la tool {name} fallo: {type(exc).__name__}: {exc}"
+            if injector is not None:
+                result = injector.corrupt_result(step, name, result)
             input_items.append(
                 {
                     "type": "function_call_output",
@@ -90,7 +151,7 @@ def run_agent(question: str, client=None, trace_dir: str | Path = "traces") -> d
                 }
             )
             step_record["tool_calls"].append(
-                {"name": call.name, "arguments": arguments, "result": result}
+                {"name": name, "arguments": arguments, "result": result}
             )
         trace["steps"].append(step_record)
         _print_step(step_record)
@@ -98,6 +159,13 @@ def run_agent(question: str, client=None, trace_dir: str | Path = "traces") -> d
         # El for termino sin break: se agotaron los pasos.
         trace["stopped_reason"] = "max_steps"
         print(f"\nALTO: tope de {MAX_STEPS} pasos alcanzado sin respuesta final.")
+
+    if injector is not None:
+        trace["faults_injected"] = injector.fired
+
+    verdict = classify(trace)
+    trace["final_status"] = verdict["status"]
+    trace["unverified_numbers"] = verdict["unverified_numbers"]
 
     trace["cost_usd"] = round(
         trace["total_input_tokens"] * PRICE_INPUT_PER_M / 1_000_000
@@ -129,6 +197,14 @@ def _print_totals(trace: dict) -> None:
         f"{trace['total_output_tokens']} de salida. "
         f"Costo estimado: ${trace['cost_usd']:.6f} USD"
     )
+    print(
+        f"Fallas inyectadas: {len(trace['faults_injected'])} | "
+        f"Reintentos de API: {len(trace['retries'])}"
+    )
+    status_line = f"ESTADO FINAL: {trace['final_status']}"
+    if trace["unverified_numbers"]:
+        status_line += f"  (numeros sin pedigri: {trace['unverified_numbers']})"
+    print(status_line)
 
 
 def _save_trace(trace: dict, trace_dir: str | Path) -> None:
