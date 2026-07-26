@@ -2,12 +2,23 @@
 
 import argparse
 import os
+import sys
 
 from dotenv import load_dotenv
 
 from agent.faults import FaultInjector, parse_fault
 from agent.loop import run_agent
 from agent.paths import ENV_FILE
+
+
+def require_api_key() -> None:
+    """Termina con instrucciones claras si falta la llave (estilo del RAG)."""
+    if not os.environ.get("OPENAI_API_KEY", "").strip():
+        sys.exit(
+            "ERROR: falta OPENAI_API_KEY.\n"
+            "Copia .env.example como .env en la raiz del proyecto y pega tu clave:\n"
+            "    OPENAI_API_KEY=sk-...\n"
+        )
 
 
 def main() -> None:
@@ -50,6 +61,7 @@ def main() -> None:
         print("[backend: rag] search_financials respaldada por el RAG (reranker on)")
 
     load_dotenv(ENV_FILE)  # siempre el .env de la raiz del proyecto
+    require_api_key()
     run_agent(args.question, injector=injector, tool_functions=tool_functions)
 
 
