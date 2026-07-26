@@ -32,11 +32,7 @@ def _payload(chunks, reranker="on", mode="filtrado"):
 def test_los_dos_perfiles_son_los_documentados():
     # La divergencia cli/eval es intencional; este test la congela para que
     # cualquier cambio sea consciente, no accidental.
-    assert RAG_PROFILES["cli"] == {
-        "no_rerank": False,
-        "max_chars": 1500,
-        "top_k": 3,
-    }
+    assert RAG_PROFILES["cli"] == {"no_rerank": False, "max_chars": None, "top_k": 3}
     assert RAG_PROFILES["eval"] == {"no_rerank": True, "max_chars": None, "top_k": 2}
 
 

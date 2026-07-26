@@ -149,15 +149,17 @@ class RagWorker:
 
 # Las DOS configuraciones oficiales, lado a lado. La divergencia es
 # INTENCIONAL y este es su unico lugar:
-# - "cli" (demo interactiva): reranker ON (mejor retrieval), recorte a
-#   1,500 chars y top-3 (respuestas agiles, contexto corto).
+# - "cli" (demo interactiva): reranker ON (mejor retrieval), chunk COMPLETO
+#   y top-3. Sin recorte desde la fase 3: el recorte de 1,500 reprodujo en
+#   vivo el modo de falla del known-issue #8 (fabrico un margen falso de
+#   20.6% con tablas amputadas; el detector lo cazo). La demo no debe
+#   fabricar numeros aunque el detector los cace.
 # - "eval" (corridas de evaluacion): reranker OFF (la trial key de Cohere
-#   a ~10 llamadas/min no aguanta un eval), chunk COMPLETO (el recorte
-#   amputaba tablas e inducia alucinaciones; known-issues #8) y top-2
+#   a ~10 llamadas/min no aguanta un eval), chunk COMPLETO y top-2
 #   (fase 3: recorta ~1/3 de tokens por busqueda; riesgo declarado de
 #   recall si el dato vivia en el chunk 3 — la re-medicion lo dira).
 RAG_PROFILES = {
-    "cli": {"no_rerank": False, "max_chars": MAX_CHARS_PER_CHUNK, "top_k": 3},
+    "cli": {"no_rerank": False, "max_chars": None, "top_k": 3},
     "eval": {"no_rerank": True, "max_chars": None, "top_k": 2},
 }
 
