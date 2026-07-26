@@ -159,7 +159,7 @@ def test_worker_arranca_una_vez_para_varias_busquedas(monkeypatch):
     assert len(spawned) == 1  # UN solo proceso para las dos busquedas
     assert "--serve" in spawned[0]
     assert "--no-rerank" in spawned[0]
-    assert r1.startswith("[rag|reranker=off") or r1.startswith("Error:")
+    assert r1.startswith(("[rag|reranker=off", "Error:"))
     # Cada request viajo como linea JSON con el top del perfil.
     reqs = [json.loads(w) for w in proc.stdin.written]
     assert [r["top"] for r in reqs] == [2, 2]

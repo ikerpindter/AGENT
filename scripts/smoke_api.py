@@ -21,7 +21,7 @@ def main() -> None:
             input="Di hola breve",
             max_output_tokens=64,
         )
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - humo: reporta cualquier falla
         print("FALLO la llamada a la API.")
         print(f"Tipo de error: {type(exc).__name__}")
         print(f"Detalle completo:\n{exc}")

@@ -105,7 +105,7 @@ class RagWorker:
         cmd = [str(RAG_PYTHON), str(WRAPPER), "--rag-root", str(RAG_ROOT), "--serve"]
         if no_rerank:
             cmd.append("--no-rerank")
-        self._proc = subprocess.Popen(  # noqa: S603 - argumentos fijos, sin shell
+        self._proc = subprocess.Popen(  # argumentos fijos, sin shell
             cmd,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
@@ -143,7 +143,7 @@ class RagWorker:
     def close(self) -> None:
         try:
             self._proc.terminate()
-        except Exception:
+        except Exception:  # noqa: BLE001, S110 - cierre best-effort
             pass
 
 
@@ -202,7 +202,7 @@ def make_rag_search(
             if holder[0] is None or not holder[0].alive():
                 holder[0] = RagWorker(no_rerank)
             payload = holder[0].search(build_query(company, year, metric), top_k)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - error legible al modelo
             if holder[0] is not None:
                 holder[0].close()
                 holder[0] = None

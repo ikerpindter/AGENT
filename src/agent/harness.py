@@ -18,6 +18,7 @@ from pathlib import Path
 
 from agent.faults import FaultInjector, parse_fault
 from agent.loop import MODEL, run_agent
+
 # _admits_failure es "privada" de verify, pero es LA definicion oficial de
 # admision de falla del proyecto; duplicarla aqui divergiria en silencio.
 from agent.verify import _admits_failure, _extract_numbers

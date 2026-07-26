@@ -111,7 +111,7 @@ def main() -> None:
                 retrieval, chunks, int(request.get("top", 3)), reranker,
                 request["query"],
             )
-        except Exception as exc:  # el error viaja, el worker sigue vivo
+        except Exception as exc:  # noqa: BLE001 - el error viaja, el worker vive
             payload = {"error": f"{type(exc).__name__}: {exc}"}
         print(json.dumps(payload, ensure_ascii=False), flush=True)
 

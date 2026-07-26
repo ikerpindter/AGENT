@@ -150,7 +150,7 @@ def run_agent(
                     if injector is not None:
                         injector.before_tool_run(step, name)
                     result = tool_fn(**arguments)
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001 - recovery deliberado
                 # Recovery, no retry: una tool que truena es un error
                 # determinista. Se convierte en texto legible y el MODELO
                 # decide como seguir; aqui no se arregla nada por atras.
