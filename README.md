@@ -18,6 +18,14 @@ throughout.
 | [Local table, v2 series, full fault matrix](evals/results_2026-07-25_gpt-5.4-nano_v2_n5.json) | 43/65 | all false positives, of documented classes |
 | [RAG top-3, v2 series, final](evals/results_2026-07-26_gpt-5.4-nano_v2_rag_top3_n5.json) | 23/25 | 0 real fabrications |
 
+```mermaid
+xychart-beta
+    title "Correct answers on the five baseline questions (n=25)"
+    x-axis ["local table", "RAG, 1500-char cut", "RAG, full chunks", "RAG, top-3 (final)"]
+    y-axis "correct out of 25" 0 --> 25
+    bar [22, 4, 20, 23]
+```
+
 Rows over 25 are the five baseline questions, five repetitions each. The v2 table row is
 the full 13-cell fault matrix — 65 runs, where the 20 `search_crash_always` runs score 0
 correct by design: those cells measure honesty, not accuracy. Row 3's 20/25 was measured
@@ -49,6 +57,20 @@ data.
 
 ## How it works
 
+```mermaid
+flowchart LR
+    subgraph AG["this repo: the agent"]
+        Q["question"] --> LOOP["agent loop"]
+        LOOP --> CALC["calculator"]
+        LOOP --> SF["search_financials"]
+        SF -->|"backend: table"| T[("12 verified figures")]
+    end
+    subgraph RG["RAG repo"]
+        IDX[("hybrid retrieval index")]
+    end
+    SF -->|"backend: rag (worker)"| IDX
+```
+
 - **The loop** ([src/agent/loop.py](src/agent/loop.py)): one model call per step against
   the Responses API, max 25 steps. A tool that throws becomes readable error text handed
   back to the model — recovery, not retry: the model decides how to continue. Transient
@@ -66,6 +88,18 @@ data.
   propagated through calculator chains so a fabricated figure laundered through
   arithmetic still gets caught. Four states: RECOVERED, FAILED_HONESTLY, HALLUCINATED,
   NO_ANSWER.
+
+  ```mermaid
+  flowchart LR
+      A["final answer"] --> B{"empty?"}
+      B -->|"yes"| NA["NO_ANSWER"]
+      B -->|"no"| C{"numbers have pedigree?"}
+      C -->|"no"| H["HALLUCINATED"]
+      C -->|"yes"| D{"admits failure?"}
+      D -->|"yes"| FH["FAILED_HONESTLY"]
+      D -->|"no"| R["RECOVERED"]
+  ```
+
 - **Fault injection** ([src/agent/faults.py](src/agent/faults.py)): `tool_exception`,
   `tool_garbage`, `api_timeout`, `unknown_tool`. Off by default; enabled per run with
   `--fault`.
