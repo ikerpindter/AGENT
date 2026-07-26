@@ -55,6 +55,7 @@ def run_agent(
     if tool_functions is None:
         tool_functions = TOOL_FUNCTIONS
 
+    # Server-side state (previous_response_id) evaluated and rejected: chained input tokens billed in full per API docs.
     input_items = [{"role": "user", "content": question}]
     trace = {
         "question": question,
