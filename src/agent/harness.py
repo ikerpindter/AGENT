@@ -90,32 +90,19 @@ SCENARIO_COST_FACTOR = {
 # chars) el contexto pesa mas pero las corridas re-buscan menos. Margen: 7x.
 BACKEND_COST_FACTOR = {"table": 1.0, "rag": 7.0}
 
-# Recorte de fragmentos para evals rag: None = chunk completo. Justificado
-# midiendo el corpus (2026-07-25): el chunker del RAG topa en ~4,000 chars y
-# los renglones criticos viven hasta la posicion 3,966; recortar amputa
-# tablas. La corrida con recorte de 1,500 se conserva en evals/ como la otra
-# configuracion de la serie.
-RAG_TRUNCATION = None
-
-
 def _tool_functions_for_backend(backend: str):
-    """None = tools de tabla (default del loop); 'rag' arma la de retrieval.
+    """None = tools de tabla (default del loop); 'rag' usa el perfil "eval".
 
-    Para evals el reranker va APAGADO (cero llamadas a Cohere: la trial key
-    de ~10/min no aguanta un eval). Nunca en silencio: banner del wrapper en
-    el log, etiqueta [rag|reranker=off] en cada trace, y campo en la
-    metadata del archivo de resultados.
+    La configuracion del perfil (reranker off, chunk completo) vive en
+    agent.rag_tool.RAG_PROFILES, junto a la del CLI y con su justificacion.
+    Nunca en silencio: banner del wrapper en el log, etiqueta en cada trace
+    y campos en la metadata del archivo de resultados.
     """
     if backend == "table":
         return None
-    from agent.rag_tool import make_rag_search
-    from agent.tools import TOOL_FUNCTIONS
+    from agent.rag_tool import rag_tool_functions
 
-    functions = dict(TOOL_FUNCTIONS)
-    functions["search_financials"] = make_rag_search(
-        no_rerank=True, max_chars=RAG_TRUNCATION
-    )
-    return functions
+    return rag_tool_functions("eval")
 
 
 def check_correct(answer, expected) -> bool:
@@ -172,6 +159,16 @@ def _save(results, out_path):
     )
 
 
+def _truncation_meta(backend: str):
+    """Valor explicito del recorte para la metadata, leido del perfil real."""
+    if backend != "rag":
+        return "n/a"
+    from agent.rag_tool import RAG_PROFILES
+
+    max_chars = RAG_PROFILES["eval"]["max_chars"]
+    return max_chars or "none (chunk completo; el chunker del RAG topa en ~4,000)"
+
+
 def run_matrix(cells, n, out_path, runner=None, backend: str = "table"):
     """Corre la matriz; guarda resultados parciales tras CADA corrida."""
     if runner is None:
@@ -188,11 +185,7 @@ def run_matrix(cells, n, out_path, runner=None, backend: str = "table"):
             "n": n,
             "search_backend": backend,
             "reranker": "off" if backend == "rag" else "n/a (tabla local)",
-            "truncation_chars": (
-                (RAG_TRUNCATION or "none (chunk completo; el chunker del RAG topa en ~4,000)")
-                if backend == "rag"
-                else "n/a"
-            ),
+            "truncation_chars": _truncation_meta(backend),
             "cells": [list(c) for c in cells],
             "estimated_cost_usd": estimate_cost(cells, n, backend),
             "started": datetime.now().isoformat(timespec="seconds"),

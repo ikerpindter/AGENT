@@ -53,12 +53,10 @@ def main(argv=None) -> None:
 
     tool_functions = None
     if args.backend == "rag":
-        from agent.rag_tool import make_rag_search
-        from agent.tools import TOOL_FUNCTIONS
+        from agent.rag_tool import RAG_PROFILES, rag_tool_functions
 
-        tool_functions = dict(TOOL_FUNCTIONS)
-        tool_functions["search_financials"] = make_rag_search(no_rerank=False)
-        print("[backend: rag] search_financials respaldada por el RAG (reranker on)")
+        tool_functions = rag_tool_functions("cli")
+        print(f"[backend: rag] perfil cli: {RAG_PROFILES['cli']}")
 
     load_dotenv(ENV_FILE)  # siempre el .env de la raiz del proyecto
     require_api_key()

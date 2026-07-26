@@ -27,6 +27,15 @@ def _fake_run(payload=None, returncode=0, stderr="", capture=None):
     return run
 
 
+def test_los_dos_perfiles_son_los_documentados():
+    # La divergencia cli/eval es intencional; este test la congela para que
+    # cualquier cambio sea consciente, no accidental.
+    from agent.rag_tool import RAG_PROFILES
+
+    assert RAG_PROFILES["cli"] == {"no_rerank": False, "max_chars": 1500}
+    assert RAG_PROFILES["eval"] == {"no_rerank": True, "max_chars": None}
+
+
 def test_build_query_incluye_metrica_empresa_y_anio():
     q = build_query("D.R. Horton", 2024, "cost_of_home_sales")
     assert "costo de las casas vendidas" in q

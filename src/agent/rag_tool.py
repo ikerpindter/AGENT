@@ -114,6 +114,33 @@ def _search_rag(company: str, year, metric: str, no_rerank: bool, max_chars) -> 
     return "\n\n".join(parts)
 
 
+# Las DOS configuraciones oficiales, lado a lado. La divergencia es
+# INTENCIONAL y este es su unico lugar:
+# - "cli" (demo interactiva): reranker ON (mejor retrieval) y recorte a
+#   1,500 chars (respuestas agiles y contexto corto).
+# - "eval" (corridas de evaluacion): reranker OFF (la trial key de Cohere
+#   a ~10 llamadas/min no aguanta un eval) y chunk COMPLETO (el recorte
+#   amputaba tablas e inducia alucinaciones; ver docs/known-issues.md #8).
+RAG_PROFILES = {
+    "cli": {"no_rerank": False, "max_chars": MAX_CHARS_PER_CHUNK},
+    "eval": {"no_rerank": True, "max_chars": None},
+}
+
+
+def rag_tool_functions(profile: str) -> dict:
+    """Tools del agente con search_financials respaldada por el RAG.
+
+    `profile` es una de las llaves de RAG_PROFILES. Mismo contrato de tools
+    que la tabla; solo cambia el fondo de la busqueda.
+    """
+    from agent.tools import TOOL_FUNCTIONS
+
+    config = RAG_PROFILES[profile]
+    functions = dict(TOOL_FUNCTIONS)
+    functions["search_financials"] = make_rag_search(**config)
+    return functions
+
+
 def make_rag_search(no_rerank: bool = False, max_chars=MAX_CHARS_PER_CHUNK):
     """Fabrica la tool con reranker y recorte fijados desde afuera.
 
