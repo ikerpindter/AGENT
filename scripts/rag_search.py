@@ -1,16 +1,19 @@
 """Wrapper de busqueda sobre el RAG (Proyecto 1). Retrieval-only.
 
-Vive en el repo del AGENTE pero se ejecuta con el .venv del RAG:
-    <RAG>/.venv/bin/python scripts/rag_search.py --rag-root <RAG> --query "..."
+Vive en el repo del AGENTE pero se ejecuta con el .venv del RAG. Importa el
+codigo VIVO del RAG (src.query.retrieve); no copia nada y no modifica nada
+de ese repo. Nunca llama a generate(): devuelve fragmentos literales.
 
-Importa el codigo VIVO del RAG (src.query.retrieve); no copia nada y no
-modifica nada de ese repo. Nunca llama a generate(): devuelve fragmentos
-literales de los filings, no prosa generada.
+Dos modos:
+- Un disparo:  rag_search.py --rag-root <RAG> --query "..." [--top N]
+- Worker:      rag_search.py --rag-root <RAG> --serve
+  Arranca UNA vez (indice y cliente cargados una sola vez), imprime
+  {"ready": true} y atiende consultas por stdin como lineas JSON
+  {"query": "...", "top": N}, una respuesta JSON por linea. Cuando el
+  proceso padre muere, stdin se cierra y el worker termina solo.
 
-Contrato: stdout = SOLO un JSON. Todo lo demas (banners, avisos, errores)
-va a stderr. Si algo truena, el proceso sale con codigo != 0 y el error
-legible queda en stderr; la tool del agente lo convierte en mensaje para
-el modelo.
+Contrato: stdout = SOLO lineas JSON. Todo lo demas (banner del reranker,
+avisos, errores de arranque) va a stderr.
 """
 
 import argparse
@@ -20,17 +23,43 @@ import sys
 from pathlib import Path
 
 
+def _build_payload(retrieval, chunks, top, reranker, query):
+    ids = retrieval["top"][:top]
+    return {
+        "reranker": reranker,
+        "mode": retrieval["mode"],
+        "query": query,
+        "chunks": [
+            {
+                "doc_id": chunks[i]["doc_id"],
+                "company": chunks[i]["company"],
+                "fiscal_year": chunks[i]["fiscal_year"],
+                "chunk_no": chunks[i]["chunk_no"],
+                "text": chunks[i]["text"],
+            }
+            for i in ids
+        ],
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Busqueda retrieval-only sobre el RAG")
     parser.add_argument("--rag-root", required=True, help="raiz del repo del RAG")
-    parser.add_argument("--query", required=True, help="consulta en texto libre")
+    parser.add_argument("--query", default=None, help="consulta (modo un disparo)")
     parser.add_argument("--top", type=int, default=3, help="fragmentos a devolver")
+    parser.add_argument(
+        "--serve",
+        action="store_true",
+        help="modo worker persistente: consultas JSON por stdin",
+    )
     parser.add_argument(
         "--no-rerank",
         action="store_true",
         help="apaga el reranker de Cohere EN MEMORIA (el repo del RAG no se toca)",
     )
     args = parser.parse_args()
+    if not args.serve and not args.query:
+        parser.error("se requiere --query (o usa --serve)")
 
     rag_root = Path(args.rag_root).resolve()
     if not (rag_root / "src" / "query.py").exists():
@@ -51,31 +80,40 @@ def main() -> None:
         )
     else:
         print(">>> reranker: ON (config normal del RAG) <<<", file=sys.stderr)
+    reranker = "off" if args.no_rerank else "on"
 
     # Cualquier print interno del RAG (p.ej. avisos de 429 de Cohere) se
     # desvia a stderr para que stdout quede como JSON puro.
     with contextlib.redirect_stdout(sys.stderr):
         vectors, chunks = store.load()
         client = config.get_openai_client()
-        retrieval = query.retrieve(args.query, client, vectors, chunks)
 
-    top = retrieval["top"][: args.top]
-    payload = {
-        "reranker": "off" if args.no_rerank else "on",
-        "mode": retrieval["mode"],
-        "query": args.query,
-        "chunks": [
-            {
-                "doc_id": chunks[i]["doc_id"],
-                "company": chunks[i]["company"],
-                "fiscal_year": chunks[i]["fiscal_year"],
-                "chunk_no": chunks[i]["chunk_no"],
-                "text": chunks[i]["text"],
-            }
-            for i in top
-        ],
-    }
-    print(json.dumps(payload, ensure_ascii=False))
+    if not args.serve:
+        with contextlib.redirect_stdout(sys.stderr):
+            retrieval = query.retrieve(args.query, client, vectors, chunks)
+        payload = _build_payload(retrieval, chunks, args.top, reranker, args.query)
+        print(json.dumps(payload, ensure_ascii=False))
+        return
+
+    # Modo worker: una linea JSON entra, una linea JSON sale. Los errores de
+    # una consulta NO tumban el worker: viajan como {"error": ...} y la tool
+    # del agente los convierte en texto legible para el modelo.
+    print(json.dumps({"ready": True}), flush=True)
+    for line in sys.stdin:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            request = json.loads(line)
+            with contextlib.redirect_stdout(sys.stderr):
+                retrieval = query.retrieve(request["query"], client, vectors, chunks)
+            payload = _build_payload(
+                retrieval, chunks, int(request.get("top", 3)), reranker,
+                request["query"],
+            )
+        except Exception as exc:  # el error viaja, el worker sigue vivo
+            payload = {"error": f"{type(exc).__name__}: {exc}"}
+        print(json.dumps(payload, ensure_ascii=False), flush=True)
 
 
 if __name__ == "__main__":

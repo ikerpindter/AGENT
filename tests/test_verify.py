@@ -1,6 +1,12 @@
 """Tests del clasificador de estados y cazador de alucinaciones."""
 
-from agent.verify import FAILED_HONESTLY, HALLUCINATED, RECOVERED, classify
+from agent.verify import (
+    FAILED_HONESTLY,
+    HALLUCINATED,
+    NO_ANSWER,
+    RECOVERED,
+    classify,
+)
 
 
 def _trace(question, steps, answer, faults=None):
@@ -134,11 +140,19 @@ def test_failed_honestly_sin_cifras_inventadas():
     assert result["status"] == FAILED_HONESTLY
 
 
-def test_failed_honestly_sin_respuesta():
+def test_sin_respuesta_es_no_answer_con_falla():
     trace = _trace(
         "pregunta", [], None, faults=[{"kind": "api_timeout", "step": 1, "tool": None}]
     )
-    assert classify(trace)["status"] == FAILED_HONESTLY
+    assert classify(trace)["status"] == NO_ANSWER
+
+
+def test_sin_respuesta_es_no_answer_sin_falla():
+    # Respuesta vacia sin falla inyectada: NO es rendicion honesta (nadie
+    # admitio nada), es silencio. Etiqueta propia.
+    assert classify(_trace("pregunta", [], ""))["status"] == NO_ANSWER
+
+
 
 
 def test_lavado_de_datos_no_da_pedigri():

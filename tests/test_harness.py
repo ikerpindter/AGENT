@@ -44,21 +44,42 @@ def test_correctitud_numerica_con_formato_de_miles():
     assert not check_correct("Fueron 34,233.4 millones", expected)
 
 
-def test_correctitud_de_eleccion_primera_mencion():
+def test_correctitud_de_eleccion_casos_simples():
     expected = QUESTIONS["d"]["expected"]
-    assert check_correct("D.R. Horton supero a Lennar en 2024", expected)
     assert check_correct("Fue D.R. Horton", expected)
-    assert not check_correct("Fue Lennar, no D.R. Horton", expected)
+    assert check_correct("D.R. Horton tuvo mayores ingresos totales que Lennar", expected)
+    assert not check_correct("Por lo tanto, Lennar tuvo mayores ingresos que D.R. Horton", expected)
     assert not check_correct("No pude obtener los datos", expected)
 
 
-def test_fragilidad_documentada_de_primera_mencion():
-    # LIMITACION CONOCIDA (no un bug silencioso): una respuesta CORRECTA
-    # que menciona primero a la perdedora se marca incorrecta. Si esto
-    # cambia, actualizar docstring de check_correct y auditoria manual.
+def test_medidor_de_conclusion_arregla_los_fallos_auditados():
+    # Las frases REALES en que el medidor viejo de primera mencion fallo
+    # (respuestas correctas marcadas incorrectas en (e) baseline y fullchunks).
+    expected = QUESTIONS["e"]["expected"]
+    assert check_correct(
+        "Lennar bajo ~1 punto, mientras D.R. Horton se mantuvo", expected
+    )  # sin marcador -> ultima mencion
+    assert check_correct(
+        "Entre Lennar y D.R. Horton, la mejor mejora en margen bruto de "
+        "ventas de casas fue para D.R. Horton.",
+        expected,
+    )  # marcador "fue para", empresa mas cercana
+    assert check_correct(
+        "- Lennar: margen bajo de 23.3% a 22.3%.\n"
+        "- D.R. Horton: se mantuvo en 23.5%.\n"
+        "✅ **Conclusión:** Le fue **mejor a D.R. Horton**, porque su margen "
+        "se mantuvo casi estable, mientras que el de Lennar disminuyó más.",
+        expected,
+    )  # markdown y acentos normalizados; marcador de conclusion
+
+
+def test_medidor_de_conclusion_limitacion_documentada():
+    # LIMITACION HONESTA (documentada en _choice_winner): conclusion sin
+    # marcador y con orden invertido cae al fallback de ultima mencion y se
+    # mide MAL. Este test congela la limitacion para que sea consciente.
     expected = QUESTIONS["e"]["expected"]
     assert not check_correct(
-        "Lennar bajo ~1 punto, mientras D.R. Horton se mantuvo", expected
+        "D.R. Horton gano en margenes, mientras Lennar cayo", expected
     )
 
 

@@ -20,7 +20,12 @@ from agent.tools import TOOL_FUNCTIONS, TOOL_SCHEMAS
 from agent.verify import classify
 
 MODEL = "gpt-5.4-nano"
-MAX_STEPS = 10
+# Presupuesto de pasos, con cuenta y no al aire (fase 3, 2026-07-25): el peor
+# caso secuencial medido de la pregunta (e) es ~8 busquedas + ~10 calculos +
+# 1 respuesta = 19 pasos si el modelo no agrupa llamadas, mas ~5 de margen
+# para una falla inyectada y sus reintentos. En la serie congelada anterior
+# era 10 y la (e) con falla lo agoto en 3 de 5 corridas (known-issues #4).
+MAX_STEPS = 25
 MAX_OUTPUT_TOKENS = 1000  # guarda de costo por llamada
 
 # Precios de gpt-5.4-nano en USD por millon de tokens (doc oficial, 2026-07).

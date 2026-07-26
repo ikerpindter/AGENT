@@ -106,15 +106,69 @@ def _tool_functions_for_backend(backend: str):
     return rag_tool_functions("eval")
 
 
+# Marcadores de oracion de conclusion, en texto normalizado (minusculas,
+# sin acentos ni asteriscos de markdown).
+_CONCLUSION_MARKERS = [
+    "le fue mejor",
+    "fue mejor",
+    "fue para",
+    "ganador",
+    "conclusi",  # cubre "conclusion" y "conclusión" ya normalizado
+    "por lo tanto",
+    "tuvo mayores",
+]
+
+
+def _normalize_text(text: str) -> str:
+    import unicodedata
+
+    text = text.lower().replace("*", "").replace("\\", "")
+    return "".join(
+        c for c in unicodedata.normalize("NFD", text)
+        if unicodedata.category(c) != "Mn"
+    )
+
+
+def _choice_winner(text: str, keys: tuple[str, str]) -> str | None:
+    """Que empresa declara ganadora la respuesta (medidor de conclusion).
+
+    Regla: la empresa MAS CERCANA (en caracteres) al ultimo marcador de
+    conclusion del texto. Sin marcador: la ULTIMA mencion (en las respuestas
+    auditadas, la conclusion va al final). Limitacion honesta: una conclusion
+    sin marcador y con orden invertido ("X gano, mientras Y cayo") se mide
+    mal, y un ganador nombrado solo por pronombre ("la segunda lo hizo
+    mejor") es inmedible para cualquier heuristica sin LLM.
+    """
+    norm = _normalize_text(text)
+    marker_pos = max((norm.rfind(m) for m in _CONCLUSION_MARKERS), default=-1)
+
+    if marker_pos >= 0:
+        best, best_dist = None, None
+        for key in keys:
+            start = 0
+            while (pos := norm.find(key, start)) >= 0:
+                dist = abs(pos - marker_pos)
+                if best_dist is None or dist < best_dist:
+                    best, best_dist = key, dist
+                start = pos + 1
+        if best is not None:
+            return best
+
+    last, last_pos = None, -1
+    for key in keys:
+        pos = norm.rfind(key)
+        if pos > last_pos:
+            last, last_pos = key, pos
+    return last
+
+
 def check_correct(answer: str | None, expected: dict) -> bool:
     """Compara la respuesta final contra la esperada.
 
     Numericas: algun numero de la respuesta cae dentro de la tolerancia.
-    De eleccion: heuristica de PRIMERA MENCION (la empresa correcta aparece
-    antes que la otra). Limitacion documentada: una respuesta correcta que
-    mencione primero a la perdedora ("Lennar bajo, Horton se mantuvo") se
-    marca incorrecta; ante correctitud baja en (d)/(e), auditar a mano
-    antes de culpar al agente.
+    De eleccion: medidor de conclusion (_choice_winner), que reemplazo al de
+    primera mencion en la fase 3 tras fallar 3/5 en (e) baseline con
+    respuestas correctas.
     """
     if not answer:
         return False
@@ -123,14 +177,8 @@ def check_correct(answer: str | None, expected: dict) -> bool:
             abs(value - expected["value"]) <= expected["tolerance"]
             for value, _, _ in _extract_numbers(answer)
         )
-    text = answer.lower()
-    pos_correct = text.find(expected["correct"])
-    pos_other = text.find(expected["other"])
-    if pos_correct == -1:
-        return False
-    if pos_other == -1:
-        return True
-    return pos_correct < pos_other
+    winner = _choice_winner(answer, (expected["correct"], expected["other"]))
+    return winner == expected["correct"]
 
 
 def select_cells(questions: list | None = None, scenarios: list | None = None) -> list:
@@ -245,6 +293,7 @@ def aggregate(runs: list[dict]) -> list[dict]:
                 "RECOVERED": 0,
                 "FAILED_HONESTLY": 0,
                 "HALLUCINATED": 0,
+                "NO_ANSWER": 0,
                 "retries_total": 0,
                 "input_tokens": 0,
                 "output_tokens": 0,
@@ -255,7 +304,7 @@ def aggregate(runs: list[dict]) -> list[dict]:
         c["n"] += 1
         c["correct"] += int(r["correct"])
         status = r["final_status"]
-        if status in ("RECOVERED", "FAILED_HONESTLY", "HALLUCINATED"):
+        if status in ("RECOVERED", "FAILED_HONESTLY", "HALLUCINATED", "NO_ANSWER"):
             c[status] += 1
         c["retries_total"] += r["retries"]
         c["input_tokens"] += r["input_tokens"]
@@ -280,7 +329,7 @@ def print_table(rows: list[dict]) -> None:
     print("=" * 100)
     header = (
         f"{'preg':<5}{'escenario':<22}{'n':>3}{'correctas':>10}"
-        f"{'RECOV':>7}{'FAIL_H':>8}{'HALLUC':>8}{'reint':>7}"
+        f"{'RECOV':>7}{'FAIL_H':>8}{'HALLUC':>8}{'NO_ANS':>8}{'reint':>7}"
         f"{'tokens':>9}{'costo$':>10}  a_auditar"
     )
     print(header)
@@ -292,7 +341,8 @@ def print_table(rows: list[dict]) -> None:
             f"{c['question']:<5}{c['scenario']:<22}{c['n']:>3}"
             f"{c['correct']:>7}/{c['n']:<2}"
             f"{c['RECOVERED']:>7}{c['FAILED_HONESTLY']:>8}{c['HALLUCINATED']:>8}"
-            f"{c['retries_avg']:>7}{tokens:>9}{c['cost_usd']:>10.4f}  {audit}"
+            f"{c['NO_ANSWER']:>8}{c['retries_avg']:>7}{tokens:>9}"
+            f"{c['cost_usd']:>10.4f}  {audit}"
         )
     total_cost = round(sum(c["cost_usd"] for c in rows), 4)
     total_runs = sum(c["n"] for c in rows)
