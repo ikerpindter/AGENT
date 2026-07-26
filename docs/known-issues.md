@@ -228,6 +228,56 @@ comparación con error de escala (35,441 millones declarados mayores que
 
 ---
 
+## 9. Serie v2 (fase 3): seis cambios re-medidos de una vez, con un resultado negativo documentado
+
+**Fecha:** 2026-07-25/26 · **Archivos:** los `*_v2_*` de `evals/` · **Costo total de la fase:** ~$0.28
+
+Cambios respecto a la serie congelada original: MAX_STEPS 10→25 (con
+aritmética: peor caso secuencial de (e) + margen de falla), medidor de
+elección por conclusión (reemplaza primera mención), etiqueta NO_ANSWER
+(silencio ≠ rendición honesta), worker persistente del RAG (un proceso por
+corrida en vez de uno por búsqueda), top-2 en el perfil eval (revertido, ver
+abajo), y matcher ×1000 (rechazado, ver asunto 5).
+
+**Mejoras medidas:**
+- (e) crash_once: 1/5 → **5/5**, cero corridas muertas por presupuesto
+  (antes 3 de 5 agotaban los 10 pasos).
+- (e) baseline tabla: 2/5 → **4/5 medido** (el medidor dejó de castigar
+  conclusiones que mencionan primero a la perdedora).
+- NO_ANSWER: **0 en 115 corridas** — el presupuesto de 25 pasos eliminó los
+  silencios; la etiqueta queda lista para cuando ocurran.
+
+**Bug del medidor nuevo, encontrado por la propia serie:** el medidor de
+conclusión acreditaba "correctas" a rendiciones honestas de crash_always
+que solo MENCIONABAN a las empresas (d: 4/5 y e: 5/5 "correctas" sin ningún
+dato). Arreglo: una respuesta que admite falla jamás es correcta. Los 90
+runs se re-agregaron OFFLINE (mismas respuestas guardadas, cero API,
+10 corridas recalculadas) y las tablas v2 llevan la nota `reaggregated` en
+su metadata. crash_always (d) y (e) bajaron a 0/5 — que es lo verdadero.
+
+**El resultado negativo, contado como lo que fue:** top-2 en el perfil eval
+era un riesgo declarado ("si el dato vivía en el chunk 3, se pierde") para
+ahorrar ~30% de tokens por búsqueda. Medido: **(b) 0/5** (el chunk del
+costo de DHI era exactamente el #3; 3 rendiciones honestas y 2
+fabricaciones reales cazadas por el detector: 18.9% y un cálculo completo
+inventado 32,300−26,153→19.1%) y **(e) 0/5**. El tradeoff real fue
+−30% tokens = −2 preguntas, y volvió a confirmar la ley del proyecto: datos
+parciales inducen invención. Revertido a top-3 con re-corrida: (b) volvió a
+**5/5** y (e) a 3/5 (las 2 restantes son honestidad parcial: el agente citó
+los márgenes de Lennar textuales del filing y se negó a coronar ganador sin
+los componentes de DHI). La corrida top-2 se conserva en evals/ como
+evidencia del experimento.
+
+**Serie v2 final:** tabla 43/65 (las 20 de crash_always en 0 correctas por
+diseño — ahí se mide honestidad, no aciertos), rag top-3 **23/25**, cero
+alucinaciones reales en la serie final, todos los flags auditados como
+falsos positivos de clases documentadas (fechas, LaTeX, conversiones,
+aritmética de prosa). Una respuesta contradictoria en d#5 (abre con el
+ganador equivocado, concluye con el correcto) quedó acreditada por su
+conclusión final — defendible, anotado.
+
+---
+
 ## Trabajo futuro (a propósito NO hecho)
 
 Cambiar cualquiera de estos descongelaría la línea base
