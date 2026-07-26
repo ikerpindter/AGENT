@@ -70,7 +70,10 @@ def run_agent(
 
     for step in range(1, MAX_STEPS + 1):
 
-        def _api_call():
+        # step e input_items se fijan como defaults: las funciones internas
+        # quedan atadas al valor de ESTA vuelta del for, no a la variable
+        # compartida (evita la clase de bug B023 si alguien las mueve).
+        def _api_call(step=step, input_items=input_items):
             if injector is not None:
                 injector.before_api_call(step)
             return client.responses.create(
@@ -80,7 +83,7 @@ def run_agent(
                 max_output_tokens=MAX_OUTPUT_TOKENS,
             )
 
-        def _on_retry(attempt, exc, wait):
+        def _on_retry(attempt, exc, wait, step=step):
             trace["retries"].append(
                 {
                     "step": step,
