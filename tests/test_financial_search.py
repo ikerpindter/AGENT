@@ -19,9 +19,7 @@ def test_las_12_combinaciones_existen():
 
 
 def test_empresa_desconocida_regresa_error_legible():
-    assert search_financials("PulteGroup", 2024, "total_revenues").startswith(
-        "Error:"
-    )
+    assert search_financials("PulteGroup", 2024, "total_revenues").startswith("Error:")
 
 
 def test_ano_sin_datos_regresa_error_legible():
@@ -34,9 +32,7 @@ def test_metrica_desconocida_regresa_error_legible():
 
 def test_ano_como_texto_no_revienta():
     # Si el modelo manda el ano como string, la tool lo normaliza.
-    assert search_financials("Lennar", "2024", "total_revenues").startswith(
-        "35441.5"
-    )
+    assert search_financials("Lennar", "2024", "total_revenues").startswith("35441.5")
 
 
 def test_la_tabla_sigue_en_millones():

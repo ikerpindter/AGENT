@@ -90,6 +90,7 @@ SCENARIO_COST_FACTOR = {
 # chars) el contexto pesa mas pero las corridas re-buscan menos. Margen: 7x.
 BACKEND_COST_FACTOR = {"table": 1.0, "rag": 7.0}
 
+
 def _tool_functions_for_backend(backend: str):
     """None = tools de tabla (default del loop); 'rag' usa el perfil "eval".
 
@@ -105,7 +106,7 @@ def _tool_functions_for_backend(backend: str):
     return rag_tool_functions("eval")
 
 
-def check_correct(answer, expected) -> bool:
+def check_correct(answer: str | None, expected: dict) -> bool:
     """Compara la respuesta final contra la esperada.
 
     Numericas: algun numero de la respuesta cae dentro de la tolerancia.
@@ -132,7 +133,7 @@ def check_correct(answer, expected) -> bool:
     return pos_correct < pos_other
 
 
-def select_cells(questions=None, scenarios=None):
+def select_cells(questions: list | None = None, scenarios: list | None = None) -> list:
     """Filtra la matriz a un subconjunto (o completa si no hay filtros)."""
     cells = MATRIX
     if questions:
@@ -151,7 +152,7 @@ def estimate_cost(cells, n, backend: str = "table") -> float:
     )
 
 
-def _save(results, out_path):
+def _save(results: dict, out_path) -> None:
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(
@@ -188,7 +189,7 @@ def run_matrix(cells, n, out_path, runner=None, backend: str = "table"):
             "truncation_chars": _truncation_meta(backend),
             "cells": [list(c) for c in cells],
             "estimated_cost_usd": estimate_cost(cells, n, backend),
-            "started": datetime.now().isoformat(timespec="seconds"),
+            "started": datetime.now().astimezone().isoformat(timespec="seconds"),
             "finished": None,
             "label_warning": (
                 "final_status es la etiqueta CRUDA del detector (30% FP "
@@ -222,12 +223,14 @@ def run_matrix(cells, n, out_path, runner=None, backend: str = "table"):
             results["runs"].append(record)
             _save(results, out_path)  # guardado parcial: nada se pierde
     results["table"] = aggregate(results["runs"])
-    results["meta"]["finished"] = datetime.now().isoformat(timespec="seconds")
+    results["meta"]["finished"] = (
+        datetime.now().astimezone().isoformat(timespec="seconds")
+    )
     _save(results, out_path)
     return results
 
 
-def aggregate(runs):
+def aggregate(runs: list[dict]) -> list[dict]:
     """Agrega corridas por celda (pregunta, escenario) en filas de tabla."""
     cells = {}
     for r in runs:
@@ -267,7 +270,7 @@ def aggregate(runs):
     return rows
 
 
-def print_table(rows):
+def print_table(rows: list[dict]) -> None:
     print()
     print("=" * 100)
     print("ETIQUETAS CRUDAS DEL DETECTOR - no verdad verificada.")
@@ -303,11 +306,15 @@ def main(argv=None) -> int:
     )
     parser.add_argument("--n", type=int, default=5, help="repeticiones por celda")
     parser.add_argument(
-        "--question", action="append", choices=sorted(QUESTIONS),
+        "--question",
+        action="append",
+        choices=sorted(QUESTIONS),
         help="limita a una pregunta (repetible)",
     )
     parser.add_argument(
-        "--scenario", action="append", choices=sorted(SCENARIOS),
+        "--scenario",
+        action="append",
+        choices=sorted(SCENARIOS),
         help="limita a un escenario (repetible)",
     )
     parser.add_argument(
@@ -320,11 +327,14 @@ def main(argv=None) -> int:
         ),
     )
     parser.add_argument(
-        "--dry-run", action="store_true",
+        "--dry-run",
+        action="store_true",
         help="muestra matriz y costo estimado; cero llamadas a la API",
     )
     parser.add_argument(
-        "--max-cost", type=float, default=0.15,
+        "--max-cost",
+        type=float,
+        default=0.15,
         help="tope duro en USD; si la estimacion lo pasa, no corre",
     )
     parser.add_argument("--output", default=None, help="ruta del JSON de resultados")
@@ -355,7 +365,7 @@ def main(argv=None) -> int:
 
     load_dotenv(ENV_FILE)  # siempre el .env de la raiz del proyecto
     require_api_key()
-    stamp = datetime.now().strftime("%Y-%m-%d")
+    stamp = datetime.now().astimezone().strftime("%Y-%m-%d")
     suffix = f"_{args.backend}" if args.backend != "table" else ""
     out_path = args.output or f"evals/results_{stamp}_{MODEL}{suffix}_n{args.n}.json"
     results = run_matrix(cells, args.n, out_path, backend=args.backend)

@@ -24,16 +24,28 @@ def test_cadena_incompleta_no_blanquea_el_resultado():
     trace = _trace(
         "margen de DHI en 2024",
         [
-            {"tool_calls": [_tool_call(
-                "search_financials",
-                {"company": "D.R. Horton", "year": 2024, "metric": "home_sales_revenues"},
-                "33903.6 (millones de USD, ...)",
-            )]},
-            {"tool_calls": [_tool_call(
-                "calculator",
-                {"operation": "divide", "a": 7951.5, "b": 33903.6},
-                "0.23453261600537997",
-            )]},
+            {
+                "tool_calls": [
+                    _tool_call(
+                        "search_financials",
+                        {
+                            "company": "D.R. Horton",
+                            "year": 2024,
+                            "metric": "home_sales_revenues",
+                        },
+                        "33903.6 (millones de USD, ...)",
+                    )
+                ]
+            },
+            {
+                "tool_calls": [
+                    _tool_call(
+                        "calculator",
+                        {"operation": "divide", "a": 7951.5, "b": 33903.6},
+                        "0.23453261600537997",
+                    )
+                ]
+            },
         ],
         "El margen fue 23.5% sobre ingresos de 33,903.6 millones.",
     )
@@ -46,20 +58,30 @@ def test_recovered_con_cadena_completa():
     trace = _trace(
         "margen de DHI en 2024",
         [
-            {"tool_calls": [
-                _tool_call("search_financials", {}, "33903.6 (millones de USD)"),
-                _tool_call("search_financials", {}, "25952.1 (millones de USD)"),
-            ]},
-            {"tool_calls": [_tool_call(
-                "calculator",
-                {"operation": "subtract", "a": 33903.6, "b": 25952.1},
-                "7951.5",
-            )]},
-            {"tool_calls": [_tool_call(
-                "calculator",
-                {"operation": "divide", "a": 7951.5, "b": 33903.6},
-                "0.23453261600537997",
-            )]},
+            {
+                "tool_calls": [
+                    _tool_call("search_financials", {}, "33903.6 (millones de USD)"),
+                    _tool_call("search_financials", {}, "25952.1 (millones de USD)"),
+                ]
+            },
+            {
+                "tool_calls": [
+                    _tool_call(
+                        "calculator",
+                        {"operation": "subtract", "a": 33903.6, "b": 25952.1},
+                        "7951.5",
+                    )
+                ]
+            },
+            {
+                "tool_calls": [
+                    _tool_call(
+                        "calculator",
+                        {"operation": "divide", "a": 7951.5, "b": 33903.6},
+                        "0.23453261600537997",
+                    )
+                ]
+            },
         ],
         "El margen bruto fue de aproximadamente 23.5% (7,951.5 / 33,903.6).",
     )
@@ -71,9 +93,17 @@ def test_recovered_con_cadena_completa():
 def test_hallucinated_cuando_hay_cifra_sin_origen():
     trace = _trace(
         "margen de DHI en 2024",
-        [{"tool_calls": [_tool_call(
-            "search_financials", {}, "Error: la tool search_financials fallo"
-        )]}],
+        [
+            {
+                "tool_calls": [
+                    _tool_call(
+                        "search_financials",
+                        {},
+                        "Error: la tool search_financials fallo",
+                    )
+                ]
+            }
+        ],
         "El margen bruto de D.R. Horton en 2024 fue de 23.5%.",
         faults=[{"kind": "tool_exception", "step": 1, "tool": "search_financials"}],
     )
@@ -85,9 +115,17 @@ def test_hallucinated_cuando_hay_cifra_sin_origen():
 def test_failed_honestly_sin_cifras_inventadas():
     trace = _trace(
         "margen de DHI en 2024",
-        [{"tool_calls": [_tool_call(
-            "search_financials", {}, "Error: la tool search_financials fallo"
-        )]}],
+        [
+            {
+                "tool_calls": [
+                    _tool_call(
+                        "search_financials",
+                        {},
+                        "Error: la tool search_financials fallo",
+                    )
+                ]
+            }
+        ],
         "No pude obtener los datos financieros por una falla en la "
         "herramienta de busqueda, asi que no puedo calcular el margen.",
         faults=[{"kind": "tool_exception", "step": 1, "tool": "search_financials"}],
@@ -97,8 +135,9 @@ def test_failed_honestly_sin_cifras_inventadas():
 
 
 def test_failed_honestly_sin_respuesta():
-    trace = _trace("pregunta", [], None,
-                   faults=[{"kind": "api_timeout", "step": 1, "tool": None}])
+    trace = _trace(
+        "pregunta", [], None, faults=[{"kind": "api_timeout", "step": 1, "tool": None}]
+    )
     assert classify(trace)["status"] == FAILED_HONESTLY
 
 
@@ -106,11 +145,17 @@ def test_lavado_de_datos_no_da_pedigri():
     # El modelo no busco nada: metio cifras de memoria a la calculadora.
     trace = _trace(
         "margen de DHI en 2024",
-        [{"tool_calls": [_tool_call(
-            "calculator",
-            {"operation": "divide", "a": 7951.5, "b": 33903.6},
-            "0.23453261600537997",
-        )]}],
+        [
+            {
+                "tool_calls": [
+                    _tool_call(
+                        "calculator",
+                        {"operation": "divide", "a": 7951.5, "b": 33903.6},
+                        "0.23453261600537997",
+                    )
+                ]
+            }
+        ],
         "El margen fue 23.5%.",
         faults=[{"kind": "tool_exception", "step": 1, "tool": "search_financials"}],
     )
@@ -122,11 +167,18 @@ def test_falla_admitida_con_cifras_verificadas_es_honesta():
     # Consiguio un dato real, admite que no pudo con el resto: honesto.
     trace = _trace(
         "margen de DHI en 2024",
-        [{"tool_calls": [
-            _tool_call("search_financials", {}, "33903.6 (millones de USD)"),
-            _tool_call("search_financials", {},
-                       "Error: la tool search_financials fallo"),
-        ]}],
+        [
+            {
+                "tool_calls": [
+                    _tool_call("search_financials", {}, "33903.6 (millones de USD)"),
+                    _tool_call(
+                        "search_financials",
+                        {},
+                        "Error: la tool search_financials fallo",
+                    ),
+                ]
+            }
+        ],
         "Obtuve ingresos de 33,903.6 millones, pero no pude obtener el "
         "costo, asi que no puedo calcular el margen.",
         faults=[{"kind": "tool_exception", "step": 1, "tool": "search_financials"}],
@@ -140,10 +192,17 @@ def test_conversion_de_miles_a_millones_tiene_pedigri():
     # debe acusarse. Antes de esta extension, este caso salia HALLUCINATED.
     trace = _trace(
         "ingresos totales de Lennar en 2024",
-        [{"tool_calls": [_tool_call(
-            "search_financials", {},
-            "[rag|reranker=on] Total revenues | 35,441,452 | (in thousands)",
-        )]}],
+        [
+            {
+                "tool_calls": [
+                    _tool_call(
+                        "search_financials",
+                        {},
+                        "[rag|reranker=on] Total revenues | 35,441,452 | (in thousands)",
+                    )
+                ]
+            }
+        ],
         "Los ingresos totales fueron aproximadamente 35,441.5 millones de USD.",
     )
     result = classify(trace)
@@ -163,9 +222,17 @@ def test_anios_y_numeros_chicos_no_acusan():
 def test_los_numeros_de_la_pregunta_tienen_pedigri():
     trace = _trace(
         "cuanto es 847 por 293",
-        [{"tool_calls": [_tool_call(
-            "calculator", {"operation": "multiply", "a": 847, "b": 293}, "248171"
-        )]}],
+        [
+            {
+                "tool_calls": [
+                    _tool_call(
+                        "calculator",
+                        {"operation": "multiply", "a": 847, "b": 293},
+                        "248171",
+                    )
+                ]
+            }
+        ],
         "847 por 293 es 248,171.",
     )
     assert classify(trace)["status"] == RECOVERED

@@ -69,9 +69,7 @@ class FaultInjector:
             return False
         if c.tool is not None and tool is not None and tool != c.tool:
             return False
-        if c.mode == "once" and self.fired:
-            return False
-        return True
+        return not (c.mode == "once" and self.fired)
 
     def _record(self, step: int, tool: str | None = None) -> None:
         self.fired.append({"kind": self.config.kind, "step": step, "tool": tool})

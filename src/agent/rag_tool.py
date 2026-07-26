@@ -37,7 +37,9 @@ def build_query(company: str, year: int, metric: str) -> str:
 
 
 def _label(chunk: dict) -> str:
-    return f"{chunk['company']} 10-K FY{chunk['fiscal_year']}, chunk {chunk['chunk_no']}"
+    return (
+        f"{chunk['company']} 10-K FY{chunk['fiscal_year']}, chunk {chunk['chunk_no']}"
+    )
 
 
 def _search_rag(company: str, year, metric: str, no_rerank: bool, max_chars) -> str:
@@ -60,6 +62,9 @@ def _search_rag(company: str, year, metric: str, no_rerank: bool, max_chars) -> 
         cmd.append("--no-rerank")
 
     try:
+        # check= se omite A PROPOSITO: un exit code != 0 no debe lanzar
+        # excepcion aqui; el returncode se revisa a mano abajo y se convierte
+        # en error legible para el modelo (recovery, no crash).
         proc = subprocess.run(
             cmd, capture_output=True, text=True, timeout=SUBPROCESS_TIMEOUT_S
         )

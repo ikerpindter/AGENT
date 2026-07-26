@@ -35,22 +35,20 @@ def run_agent(
     injector=None,
     retry_sleep=None,
     tool_functions=None,
-    tool_schemas=None,
 ) -> dict:
     """Corre el loop completo para una pregunta y regresa el trace.
 
     `client` es inyectable para que los tests usen un cliente falso sin red.
     `injector` (FaultInjector) inyecta fallas a proposito; None = apagado.
     `retry_sleep` reemplaza la espera del backoff en tests.
-    `tool_functions`/`tool_schemas` permiten cambiar el backend de una tool
-    (p.ej. search_financials respaldada por el RAG); None = las de tabla.
+    `tool_functions` permite cambiar el backend de una tool (p.ej.
+    search_financials respaldada por el RAG); None = las de tabla. Los
+    schemas no cambian: el contrato que ve el modelo es siempre el mismo.
     """
     if client is None:
         client = OpenAI()
     if tool_functions is None:
         tool_functions = TOOL_FUNCTIONS
-    if tool_schemas is None:
-        tool_schemas = TOOL_SCHEMAS
 
     input_items = [{"role": "user", "content": question}]
     trace = {
@@ -69,7 +67,6 @@ def run_agent(
     }
 
     for step in range(1, MAX_STEPS + 1):
-
         # step e input_items se fijan como defaults: las funciones internas
         # quedan atadas al valor de ESTA vuelta del for, no a la variable
         # compartida (evita la clase de bug B023 si alguien las mueve).
@@ -79,7 +76,7 @@ def run_agent(
             return client.responses.create(
                 model=MODEL,
                 input=input_items,
-                tools=tool_schemas,
+                tools=TOOL_SCHEMAS,
                 max_output_tokens=MAX_OUTPUT_TOKENS,
             )
 
@@ -222,9 +219,7 @@ def _print_totals(trace: dict) -> None:
 def _save_trace(trace: dict, trace_dir: str | Path) -> None:
     directory = Path(trace_dir)
     directory.mkdir(parents=True, exist_ok=True)
-    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    stamp = datetime.now().astimezone().strftime("%Y%m%d_%H%M%S")
     path = directory / f"run_{stamp}.json"
-    path.write_text(
-        json.dumps(trace, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    path.write_text(json.dumps(trace, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"Trace guardado en: {path}")

@@ -176,7 +176,9 @@ def test_tool_que_truena_se_vuelve_error_legible_y_el_modelo_recupera(tmp_path):
     )
 
     trace = run_agent(
-        "ingresos de Lennar 2024", client=client, trace_dir=tmp_path,
+        "ingresos de Lennar 2024",
+        client=client,
+        trace_dir=tmp_path,
         injector=injector,
     )
 
@@ -184,8 +186,11 @@ def test_tool_que_truena_se_vuelve_error_legible_y_el_modelo_recupera(tmp_path):
     assert trace["steps"][0]["tool_calls"][0]["result"].startswith("Error:")
     # Y el error viajo al modelo como function_call_output normal.
     second_input = client.requests[1]["input"]
-    outputs = [i for i in second_input
-               if isinstance(i, dict) and i.get("type") == "function_call_output"]
+    outputs = [
+        i
+        for i in second_input
+        if isinstance(i, dict) and i.get("type") == "function_call_output"
+    ]
     assert outputs[0]["output"].startswith("Error:")
     # Paso 2: el reintento del MODELO (no backoff) funciono.
     assert trace["steps"][1]["tool_calls"][0]["result"].startswith("35441.5")
@@ -204,8 +209,11 @@ def test_api_timeout_se_reintenta_con_backoff(tmp_path):
     waits = []
 
     trace = run_agent(
-        "capital de Francia", client=client, trace_dir=tmp_path,
-        injector=injector, retry_sleep=waits.append,
+        "capital de Francia",
+        client=client,
+        trace_dir=tmp_path,
+        injector=injector,
+        retry_sleep=waits.append,
     )
 
     assert trace["final_answer"] == "Paris"

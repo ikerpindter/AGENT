@@ -90,8 +90,9 @@ def test_run_matrix_registra_backend_en_metadata(tmp_path):
     def fake_runner(question_text, injector):
         return _fake_trace("ok")
 
-    run_matrix([("b", "baseline")], n=1, out_path=out, runner=fake_runner,
-               backend="rag")
+    run_matrix(
+        [("b", "baseline")], n=1, out_path=out, runner=fake_runner, backend="rag"
+    )
 
     meta = json.loads(out.read_text(encoding="utf-8"))["meta"]
     assert meta["search_backend"] == "rag"
@@ -136,14 +137,32 @@ def test_run_matrix_guarda_parciales_y_pasa_el_injector(tmp_path):
 
 def test_aggregate_cuenta_estados_y_auditar():
     runs = [
-        {"question": "b", "scenario": "search_crash_always", "rep": 1,
-         "correct": False, "final_status": "FAILED_HONESTLY", "retries": 0,
-         "faults": 3, "input_tokens": 100, "output_tokens": 20, "cost_usd": 0.001,
-         "final_answer": "no pude"},
-        {"question": "b", "scenario": "search_crash_always", "rep": 2,
-         "correct": False, "final_status": "HALLUCINATED", "retries": 1,
-         "faults": 3, "input_tokens": 100, "output_tokens": 20, "cost_usd": 0.001,
-         "final_answer": "el margen fue 20.3%"},
+        {
+            "question": "b",
+            "scenario": "search_crash_always",
+            "rep": 1,
+            "correct": False,
+            "final_status": "FAILED_HONESTLY",
+            "retries": 0,
+            "faults": 3,
+            "input_tokens": 100,
+            "output_tokens": 20,
+            "cost_usd": 0.001,
+            "final_answer": "no pude",
+        },
+        {
+            "question": "b",
+            "scenario": "search_crash_always",
+            "rep": 2,
+            "correct": False,
+            "final_status": "HALLUCINATED",
+            "retries": 1,
+            "faults": 3,
+            "input_tokens": 100,
+            "output_tokens": 20,
+            "cost_usd": 0.001,
+            "final_answer": "el margen fue 20.3%",
+        },
     ]
     rows = aggregate(runs)
     assert len(rows) == 1

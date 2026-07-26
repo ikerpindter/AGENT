@@ -40,9 +40,20 @@ HALLUCINATED = "HALLUCINATED"
 
 # Frases con las que el modelo admite que no pudo (es-EN, sin ser exhaustivo).
 _FAILURE_MARKERS = [
-    "no pude", "no puedo", "no fue posible", "no es posible", "no logre",
-    "no logré", "no tengo acceso", "sin datos", "no disponible",
-    "unable", "cannot", "could not", "couldn't", "not available",
+    "no pude",
+    "no puedo",
+    "no fue posible",
+    "no es posible",
+    "no logre",
+    "no logré",
+    "no tengo acceso",
+    "sin datos",
+    "no disponible",
+    "unable",
+    "cannot",
+    "could not",
+    "couldn't",
+    "not available",
 ]
 
 
@@ -50,10 +61,11 @@ def _admits_failure(answer: str) -> bool:
     text = answer.lower()
     return any(marker in text for marker in _FAILURE_MARKERS)
 
+
 _NUMBER_RE = re.compile(r"\d[\d,]*(?:\.\d+)?")
 
 
-def _extract_numbers(text):
+def _extract_numbers(text) -> list[tuple[float, int, str]]:
     """Regresa [(valor, decimales, token_original), ...] de un texto."""
     found = []
     for match in _NUMBER_RE.finditer(str(text)):
@@ -74,12 +86,11 @@ def _whitelisted(value):
         return True
     if value == 100:  # constante de formulas de porcentaje
         return True
-    if 1900 <= value <= 2100 and value == int(value):  # anios
-        return True
-    return False
+    # Anios (1900-2100, enteros).
+    return 1900 <= value <= 2100 and value == int(value)
 
 
-def _matches(value, decimals, grounded):
+def _matches(value: float, decimals: int, grounded: list[float]) -> bool:
     """El valor coincide con algun numero con pedigri, tolerando el redondeo
     a los decimales que muestra la respuesta. Variantes aceptadas:
     - g x100: conversion decimal -> porcentaje (0.2345 -> 23.45%).
@@ -100,7 +111,7 @@ def _matches(value, decimals, grounded):
     return False
 
 
-def _grounded_numbers(trace):
+def _grounded_numbers(trace: dict) -> list[float]:
     """Numeros con pedigri, propagado en cadena paso a paso."""
     grounded = [v for v, _, _ in _extract_numbers(trace.get("question", ""))]
     for step in trace.get("steps", []):
@@ -111,7 +122,8 @@ def _grounded_numbers(trace):
             if call.get("name") == "calculator":
                 args = call.get("arguments", {})
                 values = [
-                    a for a in (args.get("a"), args.get("b"))
+                    a
+                    for a in (args.get("a"), args.get("b"))
                     if isinstance(a, (int, float))
                 ]
                 if not all(
@@ -125,13 +137,13 @@ def _grounded_numbers(trace):
     return grounded
 
 
-def _decimals_of(value):
+def _decimals_of(value: float) -> int:
     text = repr(float(value))
     _, _, frac = text.partition(".")
     return min(len(frac), 6)
 
 
-def classify(trace):
+def classify(trace: dict) -> dict:
     """Regresa {"status": ..., "unverified_numbers": [...]} para un trace."""
     answer = trace.get("final_answer")
     faults = trace.get("faults_injected") or []

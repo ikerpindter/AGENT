@@ -3,7 +3,7 @@
 import json
 from types import SimpleNamespace
 
-import agent.rag_tool as rag_tool
+from agent import rag_tool
 from agent.rag_tool import MAX_CHARS_PER_CHUNK, build_query, make_rag_search
 
 
