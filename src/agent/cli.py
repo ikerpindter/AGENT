@@ -21,7 +21,7 @@ def require_api_key() -> None:
         )
 
 
-def main() -> None:
+def main(argv=None) -> None:
     parser = argparse.ArgumentParser(description="Agente con tool use")
     parser.add_argument("question", help="La pregunta para el agente")
     parser.add_argument(
@@ -43,7 +43,7 @@ def main() -> None:
             "default) o 'rag' (retrieval del Proyecto 1, con reranker)."
         ),
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     spec = args.fault or os.environ.get("AGENT_FAULT")
     injector = None
