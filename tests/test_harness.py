@@ -73,6 +73,31 @@ def test_medidor_de_conclusion_arregla_los_fallos_auditados():
     )  # markdown y acentos normalizados; marcador de conclusion
 
 
+def test_rendiciones_jamas_dan_credito():
+    # Frases REALES de crash_always que engañaron al medidor de conclusion
+    # en la serie v2 (d: 4/5 y e: 5/5 "correctas" sin ningun dato).
+    expected_d = QUESTIONS["d"]["expected"]
+    expected_e = QUESTIONS["e"]["expected"]
+    assert not check_correct(
+        "No puedo determinarlo ahora porque la herramienta que consulta los "
+        "ingresos totales en los 10-K de **Lennar** y **D.R. Horton** está "
+        "fallando (error intencional de fault injection).",
+        expected_d,
+    )
+    assert not check_correct(
+        "Ahora mismo no puedo calcularlo porque la herramienta que uso para "
+        "extraer las cifras de los 10-K (ventas de casas y costo de ventas "
+        "de casas) está fallando con un error inyectado.",
+        expected_e,
+    )
+    # Tambien en numericas: un numero "correcto" dentro de una rendicion no
+    # cuenta.
+    assert not check_correct(
+        "No pude obtener los datos, pero tipicamente ronda el 23.45%.",
+        QUESTIONS["b"]["expected"],
+    )
+
+
 def test_medidor_de_conclusion_limitacion_documentada():
     # LIMITACION HONESTA (documentada en _choice_winner): conclusion sin
     # marcador y con orden invertido cae al fallback de ultima mencion y se

@@ -18,7 +18,9 @@ from pathlib import Path
 
 from agent.faults import FaultInjector, parse_fault
 from agent.loop import MODEL, run_agent
-from agent.verify import _extract_numbers
+# _admits_failure es "privada" de verify, pero es LA definicion oficial de
+# admision de falla del proyecto; duplicarla aqui divergiria en silencio.
+from agent.verify import _admits_failure, _extract_numbers
 
 # Las 5 preguntas con su respuesta esperada congelada (verificada contra
 # los filings 10-K en la rebanada 2).
@@ -169,8 +171,18 @@ def check_correct(answer: str | None, expected: dict) -> bool:
     De eleccion: medidor de conclusion (_choice_winner), que reemplazo al de
     primera mencion en la fase 3 tras fallar 3/5 en (e) baseline con
     respuestas correctas.
+
+    Guarda anti credito-falso (fase 3, tras la serie v2): una respuesta que
+    ADMITE falla jamas es correcta, sin importar que empresas o numeros
+    mencione. Sin esto, el medidor de conclusion acreditaba rendiciones
+    honestas de crash_always que solo mencionaban a la empresa correcta
+    (d: 4/5 y e: 5/5 "correctas" sin ningun dato). Limitacion del reverso:
+    una respuesta correcta que ademas diga "no puedo dar mas detalle" se
+    marcaria incorrecta; no observado en 180+ corridas.
     """
     if not answer:
+        return False
+    if _admits_failure(answer):
         return False
     if expected["kind"] == "number":
         return any(
@@ -218,6 +230,15 @@ def _truncation_meta(backend: str):
     return max_chars or "none (chunk completo; el chunker del RAG topa en ~4,000)"
 
 
+def _top_k_meta(backend: str):
+    """top_k del perfil eval para la metadata (n/a si el backend es tabla)."""
+    if backend != "rag":
+        return "n/a"
+    from agent.rag_tool import RAG_PROFILES
+
+    return RAG_PROFILES["eval"]["top_k"]
+
+
 def run_matrix(cells, n, out_path, runner=None, backend: str = "table"):
     """Corre la matriz; guarda resultados parciales tras CADA corrida."""
     if runner is None:
@@ -235,6 +256,7 @@ def run_matrix(cells, n, out_path, runner=None, backend: str = "table"):
             "search_backend": backend,
             "reranker": "off" if backend == "rag" else "n/a (tabla local)",
             "truncation_chars": _truncation_meta(backend),
+            "rag_top_k": _top_k_meta(backend),
             "cells": [list(c) for c in cells],
             "estimated_cost_usd": estimate_cost(cells, n, backend),
             "started": datetime.now().astimezone().isoformat(timespec="seconds"),

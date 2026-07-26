@@ -155,12 +155,13 @@ class RagWorker:
 #   20.6% con tablas amputadas; el detector lo cazo). La demo no debe
 #   fabricar numeros aunque el detector los cace.
 # - "eval" (corridas de evaluacion): reranker OFF (la trial key de Cohere
-#   a ~10 llamadas/min no aguanta un eval), chunk COMPLETO y top-2
-#   (fase 3: recorta ~1/3 de tokens por busqueda; riesgo declarado de
-#   recall si el dato vivia en el chunk 3 — la re-medicion lo dira).
+#   a ~10 llamadas/min no aguanta un eval), chunk COMPLETO y top-3.
+#   top-2 se probo en la serie v2 y REPROBO con evidencia: -30% de tokens
+#   a cambio de (b) 0/5 (el chunk del costo era el #3) y (e) 0/5, con dos
+#   fabricaciones reales. Riesgo declarado, medido, revertido.
 RAG_PROFILES = {
     "cli": {"no_rerank": False, "max_chars": None, "top_k": 3},
-    "eval": {"no_rerank": True, "max_chars": None, "top_k": 2},
+    "eval": {"no_rerank": True, "max_chars": None, "top_k": 3},
 }
 
 
