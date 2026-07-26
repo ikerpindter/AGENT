@@ -24,6 +24,7 @@ secrets/
 .ruff_cache/
 .mypy_cache/
 .cache/
+.coverage
 
 # Datos locales: nada de esto va al repo publico
 data/
