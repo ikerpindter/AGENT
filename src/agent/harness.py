@@ -85,6 +85,37 @@ SCENARIO_COST_FACTOR = {
     "api_timeout_once": 1.0,
     "unknown_tool_once": 1.3,
 }
+# Factor de costo del backend rag sobre la tabla. Medido: la corrida rag con
+# recorte de 1,500 chars costo 4.7x la tabla; con chunks completos (~3,800
+# chars) el contexto pesa mas pero las corridas re-buscan menos. Margen: 7x.
+BACKEND_COST_FACTOR = {"table": 1.0, "rag": 7.0}
+
+# Recorte de fragmentos para evals rag: None = chunk completo. Justificado
+# midiendo el corpus (2026-07-25): el chunker del RAG topa en ~4,000 chars y
+# los renglones criticos viven hasta la posicion 3,966; recortar amputa
+# tablas. La corrida con recorte de 1,500 se conserva en evals/ como la otra
+# configuracion de la serie.
+RAG_TRUNCATION = None
+
+
+def _tool_functions_for_backend(backend: str):
+    """None = tools de tabla (default del loop); 'rag' arma la de retrieval.
+
+    Para evals el reranker va APAGADO (cero llamadas a Cohere: la trial key
+    de ~10/min no aguanta un eval). Nunca en silencio: banner del wrapper en
+    el log, etiqueta [rag|reranker=off] en cada trace, y campo en la
+    metadata del archivo de resultados.
+    """
+    if backend == "table":
+        return None
+    from agent.rag_tool import make_rag_search
+    from agent.tools import TOOL_FUNCTIONS
+
+    functions = dict(TOOL_FUNCTIONS)
+    functions["search_financials"] = make_rag_search(
+        no_rerank=True, max_chars=RAG_TRUNCATION
+    )
+    return functions
 
 
 def check_correct(answer, expected) -> bool:
@@ -124,14 +155,13 @@ def select_cells(questions=None, scenarios=None):
     return cells
 
 
-def estimate_cost(cells, n) -> float:
+def estimate_cost(cells, n, backend: str = "table") -> float:
     return round(
-        sum(COST_PER_RUN[q] * SCENARIO_COST_FACTOR[s] for q, s in cells) * n, 4
+        sum(COST_PER_RUN[q] * SCENARIO_COST_FACTOR[s] for q, s in cells)
+        * n
+        * BACKEND_COST_FACTOR[backend],
+        4,
     )
-
-
-def _default_runner(question_text, injector):
-    return run_agent(question_text, injector=injector)
 
 
 def _save(results, out_path):
@@ -142,14 +172,29 @@ def _save(results, out_path):
     )
 
 
-def run_matrix(cells, n, out_path, runner=_default_runner):
+def run_matrix(cells, n, out_path, runner=None, backend: str = "table"):
     """Corre la matriz; guarda resultados parciales tras CADA corrida."""
+    if runner is None:
+        tool_functions = _tool_functions_for_backend(backend)
+
+        def runner(question_text, injector):
+            return run_agent(
+                question_text, injector=injector, tool_functions=tool_functions
+            )
+
     results = {
         "meta": {
             "model": MODEL,
             "n": n,
+            "search_backend": backend,
+            "reranker": "off" if backend == "rag" else "n/a (tabla local)",
+            "truncation_chars": (
+                (RAG_TRUNCATION or "none (chunk completo; el chunker del RAG topa en ~4,000)")
+                if backend == "rag"
+                else "n/a"
+            ),
             "cells": [list(c) for c in cells],
-            "estimated_cost_usd": estimate_cost(cells, n),
+            "estimated_cost_usd": estimate_cost(cells, n, backend),
             "started": datetime.now().isoformat(timespec="seconds"),
             "finished": None,
             "label_warning": (
@@ -273,6 +318,15 @@ def main(argv=None) -> int:
         help="limita a un escenario (repetible)",
     )
     parser.add_argument(
+        "--backend",
+        choices=["table", "rag"],
+        default="table",
+        help=(
+            "fondo de search_financials: 'table' (12 numeros verificados) o "
+            "'rag' (retrieval del Proyecto 1, reranker apagado en evals)"
+        ),
+    )
+    parser.add_argument(
         "--dry-run", action="store_true",
         help="muestra matriz y costo estimado; cero llamadas a la API",
     )
@@ -284,7 +338,11 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
 
     cells = select_cells(args.question, args.scenario)
-    est = estimate_cost(cells, args.n)
+    est = estimate_cost(cells, args.n, args.backend)
+    print(
+        f"Backend: {args.backend}"
+        + (" (reranker APAGADO para evals)" if args.backend == "rag" else "")
+    )
     print(f"Matriz: {len(cells)} celdas x N={args.n} = {len(cells) * args.n} corridas")
     for q, s in cells:
         print(f"  ({q}) {s}")
@@ -301,8 +359,9 @@ def main(argv=None) -> int:
 
     load_dotenv()
     stamp = datetime.now().strftime("%Y-%m-%d")
-    out_path = args.output or f"evals/results_{stamp}_{MODEL}_n{args.n}.json"
-    results = run_matrix(cells, args.n, out_path)
+    suffix = f"_{args.backend}" if args.backend != "table" else ""
+    out_path = args.output or f"evals/results_{stamp}_{MODEL}{suffix}_n{args.n}.json"
+    results = run_matrix(cells, args.n, out_path, backend=args.backend)
     print_table(results["table"])
     print(f"\nResultados congelados en: {out_path}")
     return 0

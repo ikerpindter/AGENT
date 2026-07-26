@@ -166,6 +166,57 @@ condicionan qué preguntas "fuera del corpus" fallan de verdad.
 
 ---
 
+## 7. Las métricas agregadas del reranker escondían una falla concreta
+
+**Fecha:** 2026-07-25 · **Fuente:** serie de evals rag (`evals/results_2026-07-25_gpt-5.4-nano_rag_n5.json`)
+
+Para los evals se apagó el reranker de Cohere (la trial key de ~10
+llamadas/min no aguanta un eval), aceptando el costo que los baselines del
+propio RAG median: ~5 puntos de context_precision (0.802 → 0.755). La
+prueba manual de la pregunta (a) con reranker prendido recuperaba el chunk
+73 (estado de resultados consolidado, con el total completo en la posición
+382); sin reranker ese chunk deja de llegar al top-3 y el dato queda solo
+en tablas del MD&A, mucho más profundas. Los ~5 puntos "aceptables" del
+promedio eran exactamente los que subían el chunk correcto para esta
+pregunta. Lección: una métrica agregada puede esconder la falla puntual
+que te va a doler; los promedios no localizan.
+
+## 8. Serie de truncation: dos configuraciones medidas, no una "corrida mala"
+
+**Fecha:** 2026-07-25 · **Fuente:** los dos archivos rag de `evals/` (serie con una variable)
+
+| Configuración | Correctas (medido) | Acusaciones del detector |
+|---|---|---|
+| tabla (referencia) | 22/25 | 3 (todas FP auditadas) |
+| rag, recorte 1,500 chars | 4/25 | 11 — **9 verdaderas** |
+| rag, chunks completos | 20/25 | 8 (todas FP auditadas) |
+
+**El recorte de 1,500 amputaba tablas.** Medido contra el corpus: el
+chunker del RAG topa en ~4,000 chars y los renglones críticos viven hasta
+la posición 3,966; en el chunk 44 de Lennar, "Total revenues" empieza en
+la posición 1,578 — 78 caracteres después del corte. El modelo recibía la
+tabla mocha y la completaba inventando: 5/5 totales fabricados y todos
+distintos en la pregunta (a). Fue el primer brote de positivos VERDADEROS
+del detector (9 de 11 acusaciones correctas tras auditoría), y el origen
+del hallazgo central del proyecto: **el modelo no inventa cuando le
+faltan datos (se rinde honesto); inventa cuando recibe datos truncados.**
+
+La corrida con chunks completos (`truncation=none` explícito en la
+metadata, junto a `reranker=off`) recupera 20/25 medido — 23-24/25 tras
+auditar los fallos del medidor de primera mención — casi al nivel de la
+tabla curada. Ambos archivos se conservan: son dos configuraciones
+medidas de la misma serie, no una corrida buena y una mala.
+
+**Falsos positivos nuevos observados en la corrida de chunks completos**
+(documentados, sin arreglar): la conversión ×1000 en dirección
+millones→"mil millones" ("36.8 mil millones" → "36,800 millones"), espejo
+del ÷1000 del asunto 5; y cifras con coma decimal europea ("36,8") que el
+extractor parte mal. Una falla real confirmada en esa corrida: una
+comparación con error de escala (35,441 millones declarados mayores que
+36.8 mil millones) — la trampa de unidades del corpus cobrando en vivo.
+
+---
+
 ## Trabajo futuro (a propósito NO hecho)
 
 Cambiar cualquiera de estos descongelaría la línea base

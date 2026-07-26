@@ -1,0 +1,453 @@
+{
+  "meta": {
+    "model": "gpt-5.4-nano",
+    "n": 5,
+    "search_backend": "rag",
+    "reranker": "off",
+    "cells": [
+      [
+        "a",
+        "baseline"
+      ],
+      [
+        "b",
+        "baseline"
+      ],
+      [
+        "c",
+        "baseline"
+      ],
+      [
+        "d",
+        "baseline"
+      ],
+      [
+        "e",
+        "baseline"
+      ]
+    ],
+    "estimated_cost_usd": 0.075,
+    "started": "2026-07-25T17:14:31",
+    "finished": "2026-07-25T18:54:53",
+    "label_warning": "final_status es la etiqueta CRUDA del detector (30% FP documentado bajo fallas); no es verdad verificada"
+  },
+  "runs": [
+    {
+      "question": "a",
+      "scenario": "baseline",
+      "rep": 1,
+      "correct": false,
+      "final_status": "HALLUCINATED",
+      "retries": 0,
+      "faults": 0,
+      "input_tokens": 1981,
+      "output_tokens": 71,
+      "cost_usd": 0.000485,
+      "final_answer": "Los **ingresos totales (total revenues) de Lennar en el año fiscal 2024** fueron de **$49,870 millones de USD**."
+    },
+    {
+      "question": "a",
+      "scenario": "baseline",
+      "rep": 2,
+      "correct": false,
+      "final_status": "HALLUCINATED",
+      "retries": 0,
+      "faults": 0,
+      "input_tokens": 1981,
+      "output_tokens": 91,
+      "cost_usd": 0.00051,
+      "final_answer": "Los **ingresos totales (total revenues)** de **Lennar** en su **año fiscal 2024** fueron de **$56,540.9 millones de USD** (aprox. **$56,540.9 millones**)."
+    },
+    {
+      "question": "a",
+      "scenario": "baseline",
+      "rep": 3,
+      "correct": false,
+      "final_status": "HALLUCINATED",
+      "retries": 0,
+      "faults": 0,
+      "input_tokens": 1981,
+      "output_tokens": 73,
+      "cost_usd": 0.000487,
+      "final_answer": "Los **ingresos totales (total revenues) de Lennar en el año fiscal 2024** fueron de **$67,018.2 millones de USD**."
+    },
+    {
+      "question": "a",
+      "scenario": "baseline",
+      "rep": 4,
+      "correct": false,
+      "final_status": "HALLUCINATED",
+      "retries": 0,
+      "faults": 0,
+      "input_tokens": 1981,
+      "output_tokens": 71,
+      "cost_usd": 0.000485,
+      "final_answer": "Los **ingresos totales (total revenues) de Lennar en el año fiscal 2024** fueron de **$48,697 millones de USD**."
+    },
+    {
+      "question": "a",
+      "scenario": "baseline",
+      "rep": 5,
+      "correct": false,
+      "final_status": "HALLUCINATED",
+      "retries": 0,
+      "faults": 0,
+      "input_tokens": 1981,
+      "output_tokens": 73,
+      "cost_usd": 0.000487,
+      "final_answer": "Los **ingresos totales (total revenues) de Lennar en el año fiscal 2024** fueron de **$48,992.4 millones de USD**."
+    },
+    {
+      "question": "b",
+      "scenario": "baseline",
+      "rep": 1,
+      "correct": false,
+      "final_status": "RECOVERED",
+      "retries": 0,
+      "faults": 0,
+      "input_tokens": 11591,
+      "output_tokens": 319,
+      "cost_usd": 0.002717,
+      "final_answer": "En el 10-K de **D.R. Horton** para el **año fiscal 2024** (terminado el **30 de septiembre de 2024**) no aparece en el extracto recuperado el **costo de ventas de casas (cost of home sales)**, por lo que **no puedo calcular el margen bruto de venta de casas** como:\n\n**Margen bruto de venta de casas = (Home sales revenues − Cost of home sales) / Home sales revenues**\n\nSi me confirmas si “margen bruto de venta de casas” lo calculas como **(ingresos por venta de casas − costo de ventas de casas) / ingresos por venta de casas**, puedo volver a buscar el **metric “cost_of_home_sales”** en el filing para darte el % exacto."
+    },
+    {
+      "question": "b",
+      "scenario": "baseline",
+      "rep": 2,
+      "correct": false,
+      "final_status": "FAILED_HONESTLY",
+      "retries": 0,
+      "faults": 0,
+      "input_tokens": 11712,
+      "output_tokens": 288,
+      "cost_usd": 0.002702,
+      "final_answer": "No puedo calcularlo con los datos disponibles porque la herramienta no está devolviendo el **costo de las casas vendidas (cost_of_home_sales)** ni el componente necesario para margen bruto a partir de “home sales revenues” para **D.R. Horton FY2024**.\n\nSi confirmas si te refieres a:\n- **Margen bruto = (Ingresos por venta de casas − Costo de casas vendidas) / Ingresos por venta de casas**,  \no a otra definición (p. ej., incluyendo/excluyendo ciertas partidas),\n\npuedo intentarlo de nuevo en cuanto la extracción de **cost_of_home_sales** esté disponible."
+    },
+    {
+      "question": "b",
+      "scenario": "baseline",
+      "rep": 3,
+      "correct": false,
+      "final_status": "FAILED_HONESTLY",
+      "retries": 0,
+      "faults": 0,
+      "input_tokens": 11592,
+      "output_tokens": 365,
+      "cost_usd": 0.002775,
+      "final_answer": "No puedo calcular el **margen bruto de venta de casas** de **D.R. Horton en 2024** con la información que se recuperó: para ese margen se necesita **(1) ingresos por venta de casas (home sales revenues)** y **(2) costo de las casas vendidas (cost of home sales)**.\n\nEn la búsqueda solo me devolvieron contenido donde **no aparecen** (en lo recuperado) la cifra de **cost of home sales** para FY2024, por lo que no es posible calcular:\n\n\\[\n\\text{Margen bruto}=\\frac{\\text{home sales revenues} - \\text{cost of home sales}}{\\text{home sales revenues}}\n\\]\n\nSi me confirmas que quieres el margen bruto para “homebuilding” (solo casas) y me vuelves a autorizar a buscar específicamente **cost_of_home_sales** de D.R. Horton FY2024 (o me pegas esa tabla del 10‑K), te doy el porcentaje exacto."
+    },
+    {
+      "question": "b",
+      "scenario": "baseline",
+      "rep": 4,
+      "correct": false,
+      "final_status": "FAILED_HONESTLY",
+      "retries": 0,
+      "faults": 0,
+      "input_tokens": 11712,
+      "output_tokens": 365,
+      "cost_usd": 0.002799,
+      "final_answer": "El **margen bruto de venta de casas** de **D.R. Horton en 2024** fue:\n\n\\[\n\\text{Margen bruto}=\\frac{\\text{Ingresos por venta de casas} - \\text{Costo de las casas vendidas}}{\\text{Ingresos por venta de casas}}\n\\]\n\nSin embargo, con las cifras que pude recuperar del **10-K FY2024** solo aparece el texto/otros apartados y **no se retornaron numéricamente** los valores de:\n\n- **home_sales_revenues** (ingresos por venta de casas) y  \n- **cost_of_home_sales** (costo de las casas vendidas)\n\nPor lo tanto, **no puedo calcular el porcentaje exacto con los datos actualmente disponibles**.\n\nSi me confirmas si quieres que use **otro indicador** (p. ej., margen bruto consolidado en vez de “de casas”) o si puedes proporcionar los montos (o el extracto donde salen), te lo calculo de inmediato."
+    },
+    {
+      "question": "b",
+      "scenario": "baseline",
+      "rep": 5,
+      "correct": false,
+      "final_status": "FAILED_HONESTLY",
+      "retries": 0,
+      "faults": 0,
+      "input_tokens": 9036,
+      "output_tokens": 306,
+      "cost_usd": 0.00219,
+      "final_answer": "El **margen bruto de venta de casas (homebuilding gross margin)** de **D.R. Horton** en **2024** fue:\n\n\\[\n\\text{Margen bruto}=\\frac{\\text{Ingresos por venta de casas} - \\text{Costo de casas vendidas}}{\\text{Ingresos por venta de casas}}\n\\]\n\nPero con las herramientas disponibles **no pude recuperar el dato de “costo de las casas vendidas”** para 2024 (la consulta devuelve resultados sin esa cifra). Sin **Home sales revenues** y **Cost of home sales** numéricos, no es posible calcular el porcentaje solicitado con precisión.\n\nSi me confirmas si quieres que usemos **otro proxy** (por ejemplo, margen de pre-tax homebuilding o margen bruto consolidado si apareciera en el filing) o si puedes pegar aquí el valor de **Cost of home sales (2024)**, te calculo el margen bruto de inmediato."
+    },
+    {
+      "question": "c",
+      "scenario": "baseline",
+      "rep": 1,
+      "correct": false,
+      "final_status": "FAILED_HONESTLY",
+      "retries": 0,
+      "faults": 0,
+      "input_tokens": 33237,
+      "output_tokens": 323,
+      "cost_usd": 0.007051,
+      "final_answer": "No puedo calcular el % de crecimiento con los datos que devolvió la herramienta para **Lennar 2024**: el valor de **“total_revenues”** de 2024 no aparece completo (el extracto está “recortado”), así que no tengo el número exacto para comparar contra **2023**.\n\nSi me confirmas o me pasas el **total_revenues de Lennar FY2024 (en millones USD)**, te calculo inmediatamente el crecimiento porcentual."
+    },
+    {
+      "question": "c",
+      "scenario": "baseline",
+      "rep": 2,
+      "correct": false,
+      "final_status": "RECOVERED",
+      "retries": 0,
+      "faults": 0,
+      "input_tokens": 36968,
+      "output_tokens": 313,
+      "cost_usd": 0.007785,
+      "final_answer": "Los **ingresos totales (Total revenues) de Lennar** crecieron de **US$ 33,671.0 millones** (FY2023) a **US$ 34,? millones** (FY2024). Con estos valores, el crecimiento porcentual es aproximadamente:\n\n**≈ 2.1%** de aumento de 2023 a 2024."
+    },
+    {
+      "question": "c",
+      "scenario": "baseline",
+      "rep": 3,
+      "correct": false,
+      "final_status": "RECOVERED",
+      "retries": 0,
+      "faults": 0,
+      "input_tokens": 29972,
+      "output_tokens": 331,
+      "cost_usd": 0.006408,
+      "final_answer": "Los **ingresos totales de Lennar** (Total revenues) fueron:\n\n- **FY2023:** **33,671.010** millones de USD  \n- **FY2024:** *no se ve completa la cifra “Total revenues” en el extracto que retornó la búsqueda*, así que no puedo calcular el % de crecimiento con el dato exacto.\n\nSi me compartes el **“Total revenues” de FY2024** (o permites que haga otra extracción del mismo 10-K donde aparezca completa la fila), te calculo de inmediato el crecimiento **% de 2023 a 2024**."
+    },
+    {
+      "question": "c",
+      "scenario": "baseline",
+      "rep": 4,
+      "correct": false,
+      "final_status": "HALLUCINATED",
+      "retries": 0,
+      "faults": 0,
+      "input_tokens": 32830,
+      "output_tokens": 298,
+      "cost_usd": 0.006939,
+      "final_answer": "Los **ingresos totales (total revenues) de Lennar** pasaron de **$33,671.0 millones (FY2023)** a **$33,991.3 millones (FY2024)**.\n\nEl crecimiento porcentual de 2023 a 2024 es:\n\n**≈ 0.27%**."
+    },
+    {
+      "question": "c",
+      "scenario": "baseline",
+      "rep": 5,
+      "correct": false,
+      "final_status": "HALLUCINATED",
+      "retries": 0,
+      "faults": 0,
+      "input_tokens": 44351,
+      "output_tokens": 399,
+      "cost_usd": 0.009369,
+      "final_answer": "Los ingresos totales (Total revenues) de **Lennar** crecieron de **$31,951,335 mil** en **FY2023** a **$33,800,000 mil** en **FY2024** (ambos reportados en el 10‑K).\n\nEl crecimiento porcentual es:\n\n\\[\n\\frac{33{,}800{,}000 - 31{,}951{,}335}{31{,}951{,}335}\\times 100 \\approx 5.79\\%\n\\]\n\n✅ **Lennar: +5.79%** de FY2023 a FY2024."
+    },
+    {
+      "question": "d",
+      "scenario": "baseline",
+      "rep": 1,
+      "correct": true,
+      "final_status": "RECOVERED",
+      "retries": 0,
+      "faults": 0,
+      "input_tokens": 3266,
+      "output_tokens": 219,
+      "cost_usd": 0.000927,
+      "final_answer": "En **2024**, tuvo mayores **ingresos totales** **D.R. Horton**.\n\n- **D.R. Horton (FY 2024):** **$36.8 mil millones** en ingresos totales.  \n- **Lennar (FY 2024):** en el 10‑K se muestran sus ingresos consolidados en **miles de USD**; con la cifra de referencia del filing, sus ingresos totales resultan **menores que $36.8 mil millones**.\n\n*(Nota: D.R. Horton reporta para el año fiscal terminado el 30 de septiembre; Lennar, el 30 de noviembre.)*"
+    },
+    {
+      "question": "d",
+      "scenario": "baseline",
+      "rep": 2,
+      "correct": false,
+      "final_status": "HALLUCINATED",
+      "retries": 0,
+      "faults": 0,
+      "input_tokens": 13373,
+      "output_tokens": 226,
+      "cost_usd": 0.002957,
+      "final_answer": "En el año fiscal 2024:\n\n- **Lennar** tuvo **ingresos totales** de **$41,0 mil millones**.  \n- **D.R. Horton** tuvo **ingresos totales** de **$36,8 mil millones**.\n\n✅ **Por lo tanto, Lennar tuvo mayores ingresos totales en 2024.**"
+    },
+    {
+      "question": "d",
+      "scenario": "baseline",
+      "rep": 3,
+      "correct": true,
+      "final_status": "RECOVERED",
+      "retries": 0,
+      "faults": 0,
+      "input_tokens": 13373,
+      "output_tokens": 284,
+      "cost_usd": 0.00303,
+      "final_answer": "En 2024 (FY2024), **D.R. Horton tuvo mayores ingresos totales** que Lennar.\n\n- **D.R. Horton:** ingresos totales consolidados **$36.8 mil millones** (FY terminando el **30-Sep-2024**).\n- **Lennar:** en el 10‑K de Lennar (FY terminando el **30‑Nov-2024**) las “reventas” aparecen desglosadas, pero la cifra completa de **ingresos totales** no se muestra completa en los fragmentos recuperados; con la información disponible aquí no puedo confirmar el total exacto para comparar."
+    },
+    {
+      "question": "d",
+      "scenario": "baseline",
+      "rep": 4,
+      "correct": true,
+      "final_status": "HALLUCINATED",
+      "retries": 0,
+      "faults": 0,
+      "input_tokens": 3266,
+      "output_tokens": 268,
+      "cost_usd": 0.000988,
+      "final_answer": "En **2024**, **D.R. Horton** tuvo mayores **ingresos totales (consolidated revenues)** que **Lennar**:\n\n- **Lennar (año fiscal terminado el 30-nov-2024):** **~$33,? mil millones** (en el 10‑K aparece “Sales of homes” $33,778,149 miles de USD, es decir, **~$33.78B**, y el total de ingresos es mayor porque también incluye otras líneas como “Sales of land”).  \n- **D.R. Horton (año fiscal terminado el 30-sep-2024):** **$36.8 billion** de ingresos totales (**~$36.8B**).\n\nComo **$36.8B > ~$33.78B**, **D.R. Horton** tuvo más ingresos totales en 2024."
+    },
+    {
+      "question": "d",
+      "scenario": "baseline",
+      "rep": 5,
+      "correct": true,
+      "final_status": "HALLUCINATED",
+      "retries": 0,
+      "faults": 0,
+      "input_tokens": 3266,
+      "output_tokens": 197,
+      "cost_usd": 0.000899,
+      "final_answer": "En **2024** tuvo mayores **ingresos totales** **D.R. Horton**.\n\n- **Lennar (FY2024, año fiscal terminado 30-nov-2024):** **$45.8 mil millones** en ingresos totales.  \n- **D.R. Horton (FY2024, año fiscal terminado 30-sep-2024):** **$36.8 mil millones** en ingresos totales.  \n\n➡️ **Por lo tanto, Lennar tuvo más ingresos totales en 2024.**"
+    },
+    {
+      "question": "e",
+      "scenario": "baseline",
+      "rep": 1,
+      "correct": false,
+      "final_status": "FAILED_HONESTLY",
+      "retries": 0,
+      "faults": 0,
+      "input_tokens": 33000,
+      "output_tokens": 860,
+      "cost_usd": 0.007675,
+      "final_answer": "Para comparar “margen bruto de venta de casas” de **2023 a 2024** para **Lennar** y **D.R. Horton**, necesito los valores de:\n\n- **Ingresos por venta de casas** (“home sales revenues”)\n- **Costo de las casas vendidas** (“cost of home sales”)\n\nCon eso calculo:  \n**Margen bruto = (ingresos por venta de casas − costo de casas vendidas) / ingresos por venta de casas**\n\nEn las cifras que pude recuperar aquí:\n- Para **Lennar**, tengo **home sales revenues** y **cost of home sales** para **FY2023** (porque aparece la tabla de “Sales of homes” y “Costs of homes sold”).\n- Para **Lennar FY2024** y para **D.R. Horton 2023 y 2024**, no se alcanzaron a recuperar las partidas “home sales revenues” y “cost of home sales” en el extracto disponible (aunque sí aparece el resumen de resultados y otras tablas).\n\n**Conclusión:** con los datos disponibles en esta corrida **no puedo determinar con precisión a quién le fue mejor** (necesito las cifras faltantes de “cost of home sales” y “home sales revenues” para 2024 en Lennar y para 2023/2024 en D.R. Horton).\n\nSi me autorizas, en un siguiente paso vuelvo a extraer específicamente esas dos métricas en cada filing (FY2023 y FY2024 para ambas empresas) y te digo quién mejora y cuánto (en p.p.)."
+    },
+    {
+      "question": "e",
+      "scenario": "baseline",
+      "rep": 2,
+      "correct": false,
+      "final_status": "FAILED_HONESTLY",
+      "retries": 0,
+      "faults": 0,
+      "input_tokens": 30226,
+      "output_tokens": 791,
+      "cost_usd": 0.007034,
+      "final_answer": "Para comparar el **margen bruto de venta de casas** de 2023 a 2024, necesito calcularlo como:\n\n**Margen bruto = (Ingresos por venta de casas – Costo de las casas vendidas) / Ingresos por venta de casas**\n\nCon la información recuperada del filing, **solo tengo completo “home sales revenues” y “cost_of_home_sales” para Lennar (2023)**, y **para Lennar (2024)** aparece el detalle de ingresos, pero el **costo de las casas vendidas no se recuperó en el extracto**. Para **D.R. Horton**, en los resultados que tengo no aparecen las cifras necesarias de 2023 y 2024 de **home_sales_revenues** y **cost_of_home_sales** (se recuperaron otras secciones, pero no esas métricas).\n\n**Conclusión (por falta de datos completos):** no puedo determinar de forma fiable a quién le fue mejor entre **Lennar vs. D.R. Horton** en 2023→2024, porque faltan los valores de **costo de las casas vendidas** (y en D.R. Horton también los ingresos por venta de casas y el costo) para esos años.\n\nSi me confirmas si quieres:\n1) **Solo Lennar**, o  \n2) **Ambas (Lennar y D.R. Horton)**,\n\npuedo volver a consultar/recolectar específicamente las métricas faltantes para calcular el margen y decirte quién mejoró (y en qué magnitud)."
+    },
+    {
+      "question": "e",
+      "scenario": "baseline",
+      "rep": 3,
+      "correct": false,
+      "final_status": "RECOVERED",
+      "retries": 0,
+      "faults": 0,
+      "input_tokens": 26370,
+      "output_tokens": 680,
+      "cost_usd": 0.006124,
+      "final_answer": "Con la información que pude recuperar del 10-K:\n\n- **Lennar** sí muestra claramente **ingresos por venta de casas** (“Sales of homes”) y su **costo de ventas de casas** (“Costs of homes sold”) para **2023** (FY terminado el **30-nov-2023**) y para **2024** (FY terminado el **30-nov-2024**).  \n- **D.R. Horton**: en las consultas recuperadas **no aparecen** (en los extractos disponibles) los renglones necesarios para calcular el **margen bruto de venta de casas** para 2023 y 2024 (aunque tengo ingresos consolidados y otros desgloses).\n\nDado esto, **no puedo responder con certeza “a quién le fue mejor” entre Lennar y D.R. Horton** porque me falta la cifra equivalente en D.R. Horton para 2023 y 2024.\n\nSi me confirmas que quieres el cálculo como:\n**(home sales revenues − cost of home sales) / home sales revenues**,  \no si aceptas que use otro proxy (“gross margin on home sales” si viene en el filing), entonces te lo cierro y te digo el ganador.\n\n¿Quieres que lo compare **solo entre Lennar vs. D.R. Horton** usando ese margen bruto exacto, o te vale con el margen bruto que reporte cada una en su texto (“gross margins on home sales”)?"
+    },
+    {
+      "question": "e",
+      "scenario": "baseline",
+      "rep": 4,
+      "correct": false,
+      "final_status": "RECOVERED",
+      "retries": 0,
+      "faults": 0,
+      "input_tokens": 33000,
+      "output_tokens": 820,
+      "cost_usd": 0.007625,
+      "final_answer": "Con la información disponible en los filings recuperados, **no puedo determinar quién tuvo mejor margen bruto 2023→2024 entre Lennar y D.R. Horton**, porque para **D.R. Horton** no aparecen (en los datos devueltos) las cifras necesarias de **ingresos por venta de casas** y **costo de ventas de casas** para calcular el margen bruto de casas.\n\nPara **Lennar**, sí tengo:\n- 2023 (miles USD): **Ventas de casas = 31,778,885**; **Costo de casas vendidas = 23,025,467**.  \n  ⇒ Margen bruto 2023 = (31,778,885 − 23,025,467) / 31,778,885.\nPero las cifras equivalentes de 2024 (mismo nivel de detalle) **no vienen completas** en el extracto recuperado, así que tampoco puedo cerrar el comparativo 2023 vs 2024.\n\nSi quieres, puedo:\n1) recalcularlo inmediatamente si me confirmas que use un **otro indicador** que venga completo en el filing (p. ej., “gross margin” ya calculado), o  \n2) volver a consultar las métricas faltantes de D.R. Horton y la tabla completa de Lennar 2024 para **(ventas casas, costo casas vendidas)** y darte el ganador."
+    },
+    {
+      "question": "e",
+      "scenario": "baseline",
+      "rep": 5,
+      "correct": false,
+      "final_status": "HALLUCINATED",
+      "retries": 0,
+      "faults": 0,
+      "input_tokens": 33000,
+      "output_tokens": 949,
+      "cost_usd": 0.007786,
+      "final_answer": "Para calcular el **margen bruto sobre ventas de casas** de 2023 a 2024 se necesita:\n\n\\[\n\\text{Margen bruto}=\\frac{\\text{Ingresos por venta de casas} - \\text{Costo de casas vendidas}}{\\text{Ingresos por venta de casas}}\n\\]\n\nCon los datos que pude recuperar del filing:\n\n- **Lennar** (FY 2023): *Ingresos por venta de casas* = **31,778,885** (miles USD) y *Costo de casas vendidas* = **23,025,467** (miles USD) ⇒ margen bruto ≈ **27.55%**.  \n- **Lennar** (FY 2024): el filing recuperado muestra ventas de casas (**33,778,149**, miles USD), pero **no aparece completo** aquí el **costo de casas vendidas** para poder calcular el margen 2024 con el mismo criterio.\n- **D.R. Horton**: con la información que devolvió la búsqueda no aparecen los renglones necesarios de **ingresos por venta de casas** y **costo de casas vendidas** para 2023 y 2024, así que no puedo calcular su margen bruto con evidencia.\n\n✅ **Conclusión:** con la evidencia disponible en los datos recuperados, **no puedo determinar con certeza quién lo hizo mejor** entre Lennar y D.R. Horton de 2023 a 2024, porque faltan (en los extractos recuperados) los valores necesarios para 2024 en Lennar y para ambos años en D.R. Horton.\n\nSi me confirmas si aceptas que calcule el margen con otra definición (p.ej., “gross margin” ya reportado en el texto) o si me pegas los renglones **“home sales revenues”** y **“cost of home sales”** (o la tabla de resultados) para ambos años, te digo inmediatamente cuál mejoró y cuál tiene el mayor margen."
+    }
+  ],
+  "table": [
+    {
+      "question": "a",
+      "scenario": "baseline",
+      "n": 5,
+      "correct": 0,
+      "RECOVERED": 0,
+      "FAILED_HONESTLY": 0,
+      "HALLUCINATED": 5,
+      "retries_total": 0,
+      "input_tokens": 9905,
+      "output_tokens": 379,
+      "cost_usd": 0.002454,
+      "a_auditar": [
+        "a/baseline#1",
+        "a/baseline#2",
+        "a/baseline#3",
+        "a/baseline#4",
+        "a/baseline#5"
+      ],
+      "retries_avg": 0.0
+    },
+    {
+      "question": "b",
+      "scenario": "baseline",
+      "n": 5,
+      "correct": 0,
+      "RECOVERED": 1,
+      "FAILED_HONESTLY": 4,
+      "HALLUCINATED": 0,
+      "retries_total": 0,
+      "input_tokens": 55643,
+      "output_tokens": 1643,
+      "cost_usd": 0.013183,
+      "a_auditar": [],
+      "retries_avg": 0.0
+    },
+    {
+      "question": "c",
+      "scenario": "baseline",
+      "n": 5,
+      "correct": 0,
+      "RECOVERED": 2,
+      "FAILED_HONESTLY": 1,
+      "HALLUCINATED": 2,
+      "retries_total": 0,
+      "input_tokens": 177358,
+      "output_tokens": 1664,
+      "cost_usd": 0.037552,
+      "a_auditar": [
+        "c/baseline#4",
+        "c/baseline#5"
+      ],
+      "retries_avg": 0.0
+    },
+    {
+      "question": "d",
+      "scenario": "baseline",
+      "n": 5,
+      "correct": 4,
+      "RECOVERED": 2,
+      "FAILED_HONESTLY": 0,
+      "HALLUCINATED": 3,
+      "retries_total": 0,
+      "input_tokens": 36544,
+      "output_tokens": 1194,
+      "cost_usd": 0.008801,
+      "a_auditar": [
+        "d/baseline#2",
+        "d/baseline#4",
+        "d/baseline#5"
+      ],
+      "retries_avg": 0.0
+    },
+    {
+      "question": "e",
+      "scenario": "baseline",
+      "n": 5,
+      "correct": 0,
+      "RECOVERED": 2,
+      "FAILED_HONESTLY": 2,
+      "HALLUCINATED": 1,
+      "retries_total": 0,
+      "input_tokens": 155596,
+      "output_tokens": 4100,
+      "cost_usd": 0.036244,
+      "a_auditar": [
+        "e/baseline#5"
+      ],
+      "retries_avg": 0.0
+    }
+  ]
+}

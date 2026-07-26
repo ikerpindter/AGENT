@@ -108,6 +108,19 @@ def test_wrapper_que_truena_se_vuelve_error_legible(monkeypatch):
     assert "RuntimeError: analizador" in result
 
 
+def test_max_chars_none_manda_el_chunk_completo(monkeypatch):
+    texto = "9" * (MAX_CHARS_PER_CHUNK + 500)
+    payload = {"reranker": "off", "mode": "filtrado", "chunks": [_chunk(text=texto)]}
+    monkeypatch.setattr(rag_tool.subprocess, "run", _fake_run(payload))
+
+    result = make_rag_search(no_rerank=True, max_chars=None)(
+        "Lennar", 2024, "total_revenues"
+    )
+
+    assert texto in result  # completo, sin recorte
+    assert "…[recortado]" not in result
+
+
 def test_fragmento_largo_se_recorta(monkeypatch):
     payload = {
         "reranker": "on",

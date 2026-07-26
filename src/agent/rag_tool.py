@@ -40,7 +40,7 @@ def _label(chunk: dict) -> str:
     return f"{chunk['company']} 10-K FY{chunk['fiscal_year']}, chunk {chunk['chunk_no']}"
 
 
-def _search_rag(company: str, year, metric: str, no_rerank: bool) -> str:
+def _search_rag(company: str, year, metric: str, no_rerank: bool, max_chars) -> str:
     try:
         year = int(year)
     except (TypeError, ValueError):
@@ -104,8 +104,8 @@ def _search_rag(company: str, year, metric: str, no_rerank: bool) -> str:
     parts = [header]
     for c in matching:
         text = c["text"]
-        if len(text) > MAX_CHARS_PER_CHUNK:
-            text = text[:MAX_CHARS_PER_CHUNK] + "…[recortado]"
+        if max_chars and len(text) > max_chars:
+            text = text[:max_chars] + "…[recortado]"
         parts.append(f"--- [{_label(c)}] ---\n{text}")
     parts.append(
         "NOTA: cifras textuales del filing, en las unidades originales del "
@@ -114,15 +114,22 @@ def _search_rag(company: str, year, metric: str, no_rerank: bool) -> str:
     return "\n\n".join(parts)
 
 
-def make_rag_search(no_rerank: bool = False):
-    """Fabrica la tool con el modo de reranker fijado desde afuera.
+def make_rag_search(no_rerank: bool = False, max_chars=MAX_CHARS_PER_CHUNK):
+    """Fabrica la tool con reranker y recorte fijados desde afuera.
 
-    El modelo solo manda (company, year, metric); si el reranker va
-    prendido o apagado lo decide quien arma el agente (CLI o harness),
-    y queda gritado en el banner, en el trace y en la metadata de evals.
+    El modelo solo manda (company, year, metric); reranker y recorte los
+    decide quien arma el agente (CLI o harness) y quedan gritados en el
+    banner, en el trace y en la metadata de evals.
+
+    max_chars=None manda el chunk COMPLETO. Justificacion (medida
+    2026-07-25): el chunker del RAG topa en ~4,000 chars y los renglones
+    criticos viven hasta la posicion 3,966; cualquier recorte menor amputa
+    filas de tablas y invita al modelo a completarlas inventando (visto en
+    el eval rag con recorte de 1,500: 5/5 totales fabricados en la
+    pregunta a).
     """
 
     def search_financials(company: str, year: int, metric: str) -> str:
-        return _search_rag(company, year, metric, no_rerank)
+        return _search_rag(company, year, metric, no_rerank, max_chars)
 
     return search_financials

@@ -68,6 +68,37 @@ def test_estimacion_de_costo_escala_con_n():
     assert estimate_cost(select_cells(), 5) > 0
 
 
+def test_estimacion_con_backend_rag_aplica_el_factor():
+    cells = [("b", "baseline")]
+    assert estimate_cost(cells, 10, "rag") == round(10 * 0.0010 * 7.0, 4)
+
+
+def test_tool_functions_por_backend():
+    from agent.harness import _tool_functions_for_backend
+    from agent.tools import TOOL_FUNCTIONS
+
+    assert _tool_functions_for_backend("table") is None  # tabla = default del loop
+    rag_fns = _tool_functions_for_backend("rag")
+    assert set(rag_fns) == set(TOOL_FUNCTIONS)  # mismas tools, mismo contrato
+    assert rag_fns["search_financials"] is not TOOL_FUNCTIONS["search_financials"]
+    assert rag_fns["calculator"] is TOOL_FUNCTIONS["calculator"]
+
+
+def test_run_matrix_registra_backend_en_metadata(tmp_path):
+    out = tmp_path / "res.json"
+
+    def fake_runner(question_text, injector):
+        return _fake_trace("ok")
+
+    run_matrix([("b", "baseline")], n=1, out_path=out, runner=fake_runner,
+               backend="rag")
+
+    meta = json.loads(out.read_text(encoding="utf-8"))["meta"]
+    assert meta["search_backend"] == "rag"
+    assert meta["reranker"] == "off"
+    assert "none" in str(meta["truncation_chars"])  # chunks completos, explicito
+
+
 def _fake_trace(answer, status="RECOVERED", retries=0, faults=0):
     return {
         "final_answer": answer,
