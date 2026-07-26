@@ -32,3 +32,6 @@ cache/
 traces/
 *.sqlite
 *.db
+
+# Instrucciones locales de Claude Code (solo en disco, no en el repo)
+CLAUDE.md
