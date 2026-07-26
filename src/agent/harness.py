@@ -357,7 +357,9 @@ def main(argv=None) -> int:
 
     from dotenv import load_dotenv
 
-    load_dotenv()
+    from agent.paths import ENV_FILE
+
+    load_dotenv(ENV_FILE)  # siempre el .env de la raiz del proyecto
     stamp = datetime.now().strftime("%Y-%m-%d")
     suffix = f"_{args.backend}" if args.backend != "table" else ""
     out_path = args.output or f"evals/results_{stamp}_{MODEL}{suffix}_n{args.n}.json"

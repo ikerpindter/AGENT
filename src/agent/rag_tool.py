@@ -14,12 +14,12 @@ legible para el modelo (nunca chunks inutiles en silencio):
 import json
 import re
 import subprocess
-from pathlib import Path
 
-AGENT_ROOT = Path(__file__).resolve().parents[2]
-RAG_ROOT = AGENT_ROOT.parent / "RAG - Portfolio"
+from agent.paths import PROJECT_ROOT
+
+RAG_ROOT = PROJECT_ROOT.parent / "RAG - Portfolio"
 RAG_PYTHON = RAG_ROOT / ".venv" / "bin" / "python"
-WRAPPER = AGENT_ROOT / "scripts" / "rag_search.py"
+WRAPPER = PROJECT_ROOT / "scripts" / "rag_search.py"
 
 SUBPROCESS_TIMEOUT_S = 240
 MAX_CHARS_PER_CHUNK = 1500

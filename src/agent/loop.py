@@ -14,6 +14,7 @@ from pathlib import Path
 import openai
 from openai import OpenAI
 
+from agent.paths import TRACES_DIR
 from agent.retry import call_with_retries
 from agent.tools import TOOL_FUNCTIONS, TOOL_SCHEMAS
 from agent.verify import classify
@@ -30,7 +31,7 @@ PRICE_OUTPUT_PER_M = 1.25
 def run_agent(
     question: str,
     client=None,
-    trace_dir: str | Path = "traces",
+    trace_dir: str | Path = TRACES_DIR,
     injector=None,
     retry_sleep=None,
     tool_functions=None,

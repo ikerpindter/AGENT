@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 
 from agent.faults import FaultInjector, parse_fault
 from agent.loop import run_agent
+from agent.paths import ENV_FILE
 
 
 def main() -> None:
@@ -48,7 +49,7 @@ def main() -> None:
         tool_functions["search_financials"] = make_rag_search(no_rerank=False)
         print("[backend: rag] search_financials respaldada por el RAG (reranker on)")
 
-    load_dotenv()  # carga OPENAI_API_KEY del .env
+    load_dotenv(ENV_FILE)  # siempre el .env de la raiz del proyecto
     run_agent(args.question, injector=injector, tool_functions=tool_functions)
 
 
