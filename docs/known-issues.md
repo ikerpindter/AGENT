@@ -143,6 +143,17 @@ estrecho que una frase que el modelo pueda decir a propósito). NO cubierto
 a propósito: /1e6 (miles → miles de millones, "35.4 mil millones"); si
 aparece, saldrá como falso positivo y se audita a mano.
 
+**Extensión ×1000 evaluada y RECHAZADA (fase 3, 2026-07-25).** Se propuso
+el espejo (millones → "mil millones": 36.8 → 36,800) con el mismo
+protocolo. La re-clasificación de 148 traces congelados mostró 2 cambios
+de etiqueta atribuibles al ×1000 — exactamente los falsos positivos
+auditados del '36,800' en la serie fullchunks, cero colateral — pero la
+letra del protocolo manda: hubo flips, se cancela. Razón de fondo para no
+insistir: ×1000 es un hoyo mucho más ancho que ÷1000 (los números chicos
+abundan — porcentajes, razones — y cualquier legítimo chico ×1000 produce
+coincidencias accidentales). Los falsos positivos de la clase '36,800' se
+auditan a mano y quedan como limitación documentada del matcher.
+
 ## 6. El enum del schema como capa de seguridad no diseñada
 
 **Fecha:** 2026-07-25 · **Fuente:** prueba manual del backend RAG (trace `run_20260725_160903`)
